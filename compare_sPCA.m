@@ -35,30 +35,21 @@ for n=n_list
             F_val_oadmm_avg = zeros([1,500]);
             F_val_aradmm_avg = zeros([1,500]);
             
-            % [APPENDED FOR ManPG]
             F_val_manpg_avg = zeros([1,500]);
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             F_val_adpmm_avg = zeros([1,500]);
-            % [/APPENDED FOR ADPMM]
-            
+
             cpu_time_soc = zeros([avg,500]); cpu_time_soc(1) = eps;
             cpu_time_madmm = zeros([avg,500]); cpu_time_madmm(1) = eps;
             cpu_time_radmm = zeros([avg,500]); cpu_time_radmm(1) = eps;
             cpu_time_oadmm = zeros([avg,500]); cpu_time_oadmm(1) = eps;
             cpu_time_aradmm = zeros([avg,500]); cpu_time_aradmm(1) = eps;
-            % [APPENDED FOR ManPG]
             cpu_time_manpg = zeros([avg,500]); cpu_time_manpg(1) = eps;
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             cpu_time_adpmm = zeros([avg,500]); cpu_time_adpmm(1) = eps;
-            % [/APPENDED FOR ADPMM]
-            
+
             iter_soc = N; iter_madmm = N; iter_radmm = N; iter_aradmm = N; iter_oadmm = N;
             
-            % [APPENDED FOR ManPG]
             iter_manpg = N;
             % Parameters for ManPG subproblem
             L = abs(eigs(full(H),1)); % Lipschitz constant
@@ -71,13 +62,10 @@ for n=n_list
             nu = mu; % match mu of other algorithms
             alpha = 1; % stepsize for ManPG
             tol = 1e-8*n*p;
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             iter_adpmm = N;
             rho_adpmm = 2;
-            % [/APPENDED FOR ADPMM]
-            
+
             disp("Total repitition " + avg);
             avg_min_among_all = 0;
             for k = 1:avg
@@ -264,7 +252,6 @@ for n=n_list
                     end
                 end
                 iter_oadmm = min(iter, iter_oadmm);
-                % [APPENDED FOR ManPG]
                 %% ManPG
                 U = X0;
                 %F_val_manpg(1) = F(U);
@@ -306,9 +293,7 @@ for n=n_list
                     end
                 end
                 iter_manpg = min(iter, iter_manpg);
-                % [/APPENDED FOR ManPG]
-                
-                % [APPENDED FOR ADPMM]
+
                 %% ADPMM (Newton-Schulz variant)
                 X = X0; Z = X0;
                 Y_dual = zeros(size(X));
@@ -338,21 +323,16 @@ for n=n_list
                     end
                 end
                 iter_adpmm = min(iter, iter_adpmm);
-                % [/APPENDED FOR ADPMM]
-                
+
                 % minimun
                 min_among_all = min([min(F_val_soc), min(F_val_madmm), min(F_val_radmm), min(F_val_oadmm), min(F_val_aradmm)]);
                 
-                % [APPENDED FOR ManPG]
                 min_among_all = min([min_among_all, min(F_val_manpg)]);
-                % [/APPENDED FOR ManPG]
-                
-                % [APPENDED FOR ADPMM]
+
                 if min(F_val_adpmm) - 1e-10 < min_among_all
                     min_among_all = min(F_val_adpmm);
                 end
-                % [/APPENDED FOR ADPMM]
-                
+
                 l = size(F_val_soc);
                 for i=1:l(2)
                     F_val_soc(i) = F_val_soc(i) - min_among_all;
@@ -374,34 +354,26 @@ for n=n_list
                     F_val_aradmm(i) = F_val_aradmm(i) - min_among_all;
                 end
                 
-                % [APPENDED FOR ManPG]
                 l = size(F_val_manpg);
                 for i=1:l(2)
                     F_val_manpg(i) = F_val_manpg(i) - min_among_all;
                 end
-                % [/APPENDED FOR ManPG]
-                
-                % [APPENDED FOR ADPMM]
+
                 l = size(F_val_adpmm);
                 for i=1:l(2)
                     F_val_adpmm(i) = F_val_adpmm(i) - min_among_all;
                 end
-                % [/APPENDED FOR ADPMM]
-                
+
                 F_val_soc_avg = F_val_soc_avg + F_val_soc ;
                 F_val_madmm_avg = F_val_madmm_avg + F_val_madmm ;
                 F_val_radmm_avg = F_val_radmm_avg + F_val_radmm ;
                 F_val_oadmm_avg = F_val_oadmm_avg + F_val_oadmm ;
                 F_val_aradmm_avg = F_val_aradmm_avg + F_val_aradmm ;
                 
-                % [APPENDED FOR ManPG]
                 F_val_manpg_avg = F_val_manpg_avg + F_val_manpg ;
-                % [/APPENDED FOR ManPG]
-                
-                % [APPENDED FOR ADPMM]
+
                 F_val_adpmm_avg = F_val_adpmm_avg + F_val_adpmm ;
-                % [/APPENDED FOR ADPMM]
-                
+
                 avg_min_among_all = avg_min_among_all + min_among_all;
             end
             avg_min_among_all = avg_min_among_all / avg;
@@ -411,27 +383,19 @@ for n=n_list
             F_val_oadmm_avg = (F_val_oadmm_avg/avg);
             F_val_aradmm_avg = (F_val_aradmm_avg/avg);
             
-            % [APPENDED FOR ManPG]
             F_val_manpg_avg = (F_val_manpg_avg/avg);
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             F_val_adpmm_avg = (F_val_adpmm_avg/avg);
-            % [/APPENDED FOR ADPMM]
-            
+
             cpu_time_soc = sum(cpu_time_soc,1)/avg;
             cpu_time_madmm = sum(cpu_time_madmm,1)/avg;
             cpu_time_radmm = sum(cpu_time_radmm,1)/avg;
             cpu_time_oadmm = sum(cpu_time_oadmm,1)/avg;
             cpu_time_aradmm = sum(cpu_time_aradmm,1)/avg;
-            % [APPENDED FOR ManPG]
             cpu_time_manpg = sum(cpu_time_manpg,1)/avg;
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             cpu_time_adpmm = sum(cpu_time_adpmm,1)/avg;
-            % [/APPENDED FOR ADPMM]
-           
+
             %% Plots
             figure0 = figure(1);
             clf
@@ -441,29 +405,16 @@ for n=n_list
             semilogy(F_val_aradmm_avg(1:iter_aradmm),'LineWidth',2); hold on;
             semilogy(F_val_oadmm_avg(1:iter_oadmm),'LineWidth',2); hold on;
             
-            % [APPENDED FOR ManPG]
             semilogy(F_val_manpg_avg(1:iter_manpg), 'LineWidth',2); hold on;
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             semilogy(F_val_adpmm_avg(1:iter_adpmm), 'LineWidth',2); hold on;
-            % [/APPENDED FOR ADPMM]
-            
+
             xlabel('Iteration','interpreter','latex','FontSize',18); 
             ylabel('$f(x)-f^*$','interpreter','latex','FontSize',18);
-            legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM');
-            legend('Location','best','FontSize',18);
-            
-            % [APPENDED FOR ManPG]
-            legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM', 'ManPG');
-            legend('Location','best','FontSize',18);
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
+
             legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM', 'ManPG', 'ADPMM');
             legend('Location','best','FontSize',18);
-            % [/APPENDED FOR ADPMM]
-            
+
             figure1 = figure(2);
             clf
             loglog(cpu_time_soc(1:iter_soc), F_val_soc_avg(1:iter_soc), '-.','LineWidth',2); hold on;
@@ -471,35 +422,17 @@ for n=n_list
             loglog(cpu_time_radmm(1:iter_radmm), F_val_radmm_avg(1:iter_radmm), '-.','LineWidth',2); hold on;
             loglog(cpu_time_aradmm(1:iter_aradmm), F_val_aradmm_avg(1:iter_aradmm),'LineWidth',2); hold on;
             loglog(cpu_time_oadmm(1:iter_oadmm), F_val_oadmm_avg(1:iter_oadmm),'LineWidth',2); hold on;
-            
-            % [APPENDED FOR ManPG]
             loglog(cpu_time_manpg(1:iter_manpg), F_val_manpg_avg(1:iter_manpg), 'LineWidth',2); hold on;
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
             loglog(cpu_time_adpmm(1:iter_adpmm), F_val_adpmm_avg(1:iter_adpmm), 'LineWidth',2); hold on;
-            % [/APPENDED FOR ADPMM]
-            
+
             xlabel('CPU time','interpreter','latex','FontSize',18); 
             ylabel('$f(x)-f^*$','interpreter','latex','FontSize',18);
-            legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM');
-            legend('Location','best','FontSize',18);
-            
-            % [APPENDED FOR ManPG]
-            legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM', 'ManPG');
-            legend('Location','best','FontSize',18);
-            % [/APPENDED FOR ManPG]
-            
-            % [APPENDED FOR ADPMM]
             legend('SOC', 'MADMM', 'RADMM', 'ARADMM', 'OADMM', 'ManPG', 'ADPMM');
             legend('Location','best','FontSize',18);
-            % [/APPENDED FOR ADPMM]
-            
         end
     end
 end
 
-% [APPENDED FOR ADPMM]
 function W = newtonschulz5(B, steps)
     arguments
         B
@@ -522,4 +455,3 @@ function W = newtonschulz5(B, steps)
         W = 0.5 * W * (3 * I - WtW);
     end
 end
-% [/APPENDED FOR ADPMM]

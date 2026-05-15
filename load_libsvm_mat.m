@@ -64,18 +64,7 @@ function [H, X, y, info] = load_libsvm_mat(mat_path, mode, opts)
 
     switch lower(mode)
         case 'spca'
-            % Feature-space covariance: p x p
-            if opts.center
-                % Keep X sparse; subtract mean only conceptually via centering
-                % matrix when forming H. For very high p, full centering
-                % destroys sparsity, so we fold it into H instead:
-                mu = full(mean(X, 1));                % 1 x p
-                H = (X' * X) - n * (mu' * mu);
-                H = (H + H') / 2;                     % numerical symmetry
-                H = H / max(n - 1, 1);
-            else
-                H = X' * X;
-                H = (H + H') / 2;
+                H = (X' * X);
             end
 
         case 'spca_n'

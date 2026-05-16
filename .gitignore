@@ -2,3 +2,4 @@
 *.mat
 /logs/
 /results/
+clean/*

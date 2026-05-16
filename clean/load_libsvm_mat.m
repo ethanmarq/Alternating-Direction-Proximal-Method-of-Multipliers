@@ -64,8 +64,7 @@ function [H, X, y, info] = load_libsvm_mat(mat_path, mode, opts)
 
     switch lower(mode)
         case 'spca'
-                H = (X' * X);
-            end
+            H = (X' * X);
 
         case 'spca_n'
             % Sample-space gram: n x n  (good when n < p)

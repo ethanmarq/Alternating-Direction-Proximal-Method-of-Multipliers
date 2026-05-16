@@ -53,7 +53,6 @@ function results = run_spca_experiment(opts)
     opts = set_default(opts, 'params_override', []);
 
     addpath('misc');
-    addpath('SSN_subproblem');
 
     if ~exist(opts.output_dir, 'dir'); mkdir(opts.output_dir); end
 
@@ -405,6 +404,7 @@ function [Fv, cpu, last_iter] = solver_soc(X0, H, F, mu, N, params)
         if mod(iter, 10) == 0
             fprintf('    SOC iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -432,6 +432,7 @@ function [Fv, cpu, last_iter] = solver_madmm(X0, H, F, mu, N, params)
         if mod(iter, 10) == 0
             fprintf('    SOC iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -457,6 +458,7 @@ function [Fv, cpu, last_iter] = solver_radmm(X0, H, F, mu, N, params)
         if mod(iter, 10) == 0
             fprintf('    Radmm iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -492,6 +494,7 @@ function [Fv, cpu, last_iter] = solver_aradmm(X0, H, F, mu, N, params)
         if mod(iter, 10) == 0
             fprintf('    Aradmm iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -538,6 +541,7 @@ function [Fv, cpu, last_iter] = solver_oadmm(X0, H, F, L_M, mu, N, Fv_aradmm, pa
         if mod(iter, 10) == 0
             fprintf('    Oadmm iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -575,6 +579,7 @@ function [Fv, cpu, last_iter] = solver_manpg(X0, H, F, n, p, t, t_min, ...
         if mod(iter, 10) == 0
             fprintf('    ManPg iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 
@@ -600,6 +605,7 @@ function [Fv, cpu, last_iter] = solver_adpmm(X0, H, F, mu, N, params)
         if mod(iter, 10) == 0
             fprintf('    Adpmm iter %4d/%d in %6.2fs (F=%.4e, %.3fs/iter)\n', ...
                     iter, N, cpu(iter), Fv(iter), cpu(iter)/iter);
+        end
     end
 end
 

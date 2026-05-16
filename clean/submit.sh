@@ -99,7 +99,8 @@ echo "--- Step 1: find_stepsize ---"
 # Build the configs struct for this single (dataset, p, mu) combo, and the
 # opts struct controlling the sweep. One MATLAB invocation does the sweep.
 SWEEP_CFG="struct('data_path','$DATA_PATH','name','$NAME','p',$P_COMP,'mu',$MU)"
-SWEEP_OPTS="struct('N',$SWEEP_N,'avg',$SWEEP_AVG,'output_file','$BEST_RHO_FILE')"
+# SWEEP_OPTS="struct('N',$SWEEP_N,'avg',$SWEEP_AVG,'output_file','$BEST_RHO_FILE')"
+SWEEP_OPTS="struct('N',$SWEEP_N,'avg',$SWEEP_AVG,'output_file','$BEST_RHO_FILE','algorithms',{{'adpmm','manpg','radmm'}})"
 
 matlab -nodisplay -nosplash -nodesktop \
     -batch "maxNumCompThreads($OMP_NUM_THREADS); \
@@ -123,7 +124,8 @@ OPTS="struct('data_path','$DATA_PATH'"
 OPTS+=",'p',$P_COMP,'mu',$MU,'N',$N_ITER,'avg',$AVG"
 OPTS+=",'output_dir','$RESULTS_DIR','name','$NAME'"
 OPTS+=",'best_rho_file','$BEST_RHO_FILE'"
-OPTS+=",'algorithms',{{'all'}}"
+OPTS+=",'algorithms',{{'adpmm','manpg','radmm'}}"
+# OPTS+=",'algorithms',{{'all'}}"
 OPTS+=",'show_plots',false,'save_plots',true)"
 
 matlab -nodisplay -nosplash -nodesktop \

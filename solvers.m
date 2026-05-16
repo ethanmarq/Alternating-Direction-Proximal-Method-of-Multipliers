@@ -74,5 +74,6 @@ xlabel('Iteration'); ylabel('F - F^*');
 legend('ADPMM','ManPG','RADMM','Location','best');
 title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
 grid on;
+ylim([1e-2, 1e5]);
 saveas(gcf, sprintf('spca-rho%.2f.png', rho));
-fprintf('Saved: spca-rho%.2f.png', rho);
+fprintf('Saved: spca-rho%.2f.png\n', rho);

@@ -38,7 +38,6 @@ iter_adpmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_adpmm, F_adpmm(iter_adpmm));
 
 % ============================== ManPG =======================================
-% Trusted-author version with adaptive inner_tol and SSN subproblem.
 fprintf('ManPG...\n');
 U = X0;
 Dn  = sparse(DuplicationM(p));
@@ -83,7 +82,6 @@ iter_manpg = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_manpg, F_manpg(iter_manpg));
 
 % ============================== RADMM =======================================
-% Trusted-author version: single inner gradient step, projection via retr.
 fprintf('RADMM...\n');
 X = X0; Z = X0; Lambda = zeros(n, p);
 gamma = 1e-8;
@@ -116,5 +114,5 @@ legend('ADPMM','ManPG','RADMM','Location','best');
 title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
 grid on;
 ylim([1e-2, 1e5]);
-saveas(gcf, sprintf('spca-rho%.2f.png', rho));
-fprintf('Saved: spca-rho%.2f.png\n', rho);
+saveas(gcf, sprintf('spca-rho%d.png', rho));
+fprintf('Saved: spca-rho%d.png\n', rho);

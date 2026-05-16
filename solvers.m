@@ -4,7 +4,6 @@
 % Expects H, X0, n, p, mu, N, rho, eta, t, L, F to be in workspace.
 
 addpath('misc');
-addpath('SSN_subproblem');
 
 % ============================== ADPMM =======================================
 % Paper's AD-PMM (NS-ADMM): G = L*I + H, X-update via Newton-Schulz.

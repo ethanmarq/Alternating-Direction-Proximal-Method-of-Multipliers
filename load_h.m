@@ -24,3 +24,4 @@ F = @(X) -0.5*trace(X'*(H*X)) + mu*sum(abs(X(:)));
 % Common starting point
 rng(seed);
 X0 = orth(randn(n, p));
+

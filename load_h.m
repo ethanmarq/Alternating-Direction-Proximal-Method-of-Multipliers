@@ -3,7 +3,7 @@ data_path = '/scratch/marque6/libsvm_data/rcv1_train.mat';
 p   = 50;       % number of sparse components
 mu  = 0.10;     % l1 weight
 N   = 100;      % outer iterations
-rho = 100;      % ADMM penalty (single value, no sweep)
+rho = 10;      % ADMM penalty (single value, no sweep)
 seed = 0;
 
 % ============================== LOAD ========================================

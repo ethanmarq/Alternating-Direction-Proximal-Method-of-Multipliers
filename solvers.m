@@ -36,6 +36,27 @@ end
 iter_adpmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_adpmm, F_adpmm(iter_adpmm));
 
+% ============================== ADPMM-SVD =======================================
+fprintf('ADPMM-SVD...\n');
+X = X0; Z = X0; Y = zeros(n, p);
+F_adpmm_svd = zeros(1, N); F_adpmm_svd(1) = F(X);
+tic
+for k = 2:N
+    % X-update: orthogonalize L*X + H*X + rho*Z - Y via SVD
+    B = L*X + H*X + rho*Z - Y;
+    [U, ~, V] = svd(B, 'econ');
+    X = U*V';
+    % Z-update: soft-thresholding
+    V = X + Y/rho;
+    Z = sign(V) .* max(abs(V) - mu/rho, 0);
+    % Dual update
+    Y = Y + rho*(X - Z);
+    F_adpmm_svd(k) = F(X);
+    if abs(F_adpmm_svd(k) - F_adpmm_svd(k-1)) <= 1e-8, break; end
+end
+iter_adpmm_svd = k;
+fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
+
 % ============================== ManPG =======================================
 fprintf('ManPG...\n');
 U = X0;
@@ -103,13 +124,14 @@ iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_radmm, F_radmm(iter_radmm));
 
 % ============================== PLOT ========================================
-Fstar = min([F_adpmm(1:iter_adpmm) F_manpg(1:iter_manpg) F_radmm(1:iter_radmm)]);
+Fstar = min([F_adpmm(1:iter_adpmm) F_manpg(1:iter_manpg) F_radmm(1:iter_radmm) F_adpmm_svd(1:iter_adpmm_svd)]);
 figure('Visible', 'off');
 semilogy(1:iter_adpmm, F_adpmm(1:iter_adpmm) - Fstar + eps, 'LineWidth', 2); hold on;
+semilogy(1:iter_adpmm_svd, F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2); hold on;
 semilogy(1:iter_manpg, F_manpg(1:iter_manpg) - Fstar + eps, 'LineWidth', 2);
 semilogy(1:iter_radmm, F_radmm(1:iter_radmm) - Fstar + eps, 'LineWidth', 2);
 xlabel('Iteration'); ylabel('F - F^*');
-legend('ADPMM','ManPG','RADMM','Location','best');
+legend('ADPMM','ADPMM-SVD','ManPG','RADMM','Location','best','AutoUpdate', 'on');
 title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
 grid on;
 ylim([1e-2, 1e5]);

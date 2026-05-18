@@ -267,6 +267,8 @@ if iter == maxiter && sqrt(normDsquared)/t > 1e-1
     sparsity  = 0;
 
     F_manpg = 0;
+    F_hist = 0;
+
 
     time_manpg = 0;
 
@@ -277,7 +279,6 @@ else
     sparsity= sum(sum(X_manpg==0))/(n*r);
 
     F_hist = F;
-
     F_manpg =  F(iter-1);
 
 

@@ -264,6 +264,7 @@ if iter == maxiter %&& sqrt(normDsquared)/t > 1e-1
 
     sparsity  = 0;
 
+    F_hist = 0;
     F_manpg = 0;
 
     time_manpg = 0;

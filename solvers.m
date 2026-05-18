@@ -5,6 +5,8 @@
 
 addpath('misc');
 
+X0 = orth(randn(n, p));
+
 % ============================== ADPMM =======================================
 % Paper's AD-PMM (NS-ADMM): G = L*I + H, X-update via Newton-Schulz.
 fprintf('ADPMM...\n');
@@ -135,5 +137,5 @@ legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','Location','best','AutoUp
 title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
 grid on;
 ylim([1e-2, 1e5]);
-saveas(gcf, sprintf('spca-rho%d.png', rho));
-fprintf('Saved: spca-rho%d.png\n', rho);
+saveas(gcf, sprintf('spca-%d.png', p));
+fprintf('Saved: png\n');

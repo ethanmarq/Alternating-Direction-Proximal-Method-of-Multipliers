@@ -56,50 +56,47 @@ for k = 2:N
 end
 iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
-
-% ============================== ManPG =======================================
+% ============================== ManPG ================================
+% Repo function: f(X) = -tr(X'AX), so pass A = H/2 with type=1 to match our
+% F(X) = -0.5*tr(X'HX). Effective prox threshold inside SSN is mu*t (correct).
 fprintf('ManPG...\n');
-U = X0;
-Dn  = sparse(DuplicationM(p));
-pDn = (Dn'*Dn) \ Dn';
-prox_fun = @(b,l,r) proximal_l1(b, l*mu, r);
-t_min = 1e-4;
-nu = mu;
-alpha = 1;
-tol = 1e-8 * n * p;
-inner_iter = 100;
-num_inexact = 0; inner_flag = 0;
-Lam_x = zeros(p);
-F_manpg = zeros(1, N); F_manpg(1) = F(U);
-tic
-for k = 2:N
-    neg_pg = H * U;
-    if alpha < t_min || num_inexact > 10
-        inner_tol = max(5e-16, min(1e-14, 1e-5*tol*t^2));
-    else
-        inner_tol = max(1e-13, min(1e-11, 1e-3*tol*t^2));
-    end
-    if k == 2
-        [PU, ~, Lam_x, ~, in_flag] = Semi_newton_matrix( ...
-            n, p, U, t, U + t*neg_pg, nu*t, inner_tol, prox_fun, ...
-            inner_iter, zeros(p), Dn, pDn);
-    else
-        [PU, ~, Lam_x, ~, in_flag] = Semi_newton_matrix( ...
-            n, p, U, t, U + t*neg_pg, nu*t, inner_tol, prox_fun, ...
-            inner_iter, Lam_x, Dn, pDn);
-    end
-    if in_flag == 1, inner_flag = inner_flag + 1; end
-    V = PU - U;
-    PU = U + alpha * V;
-    % Project PU onto Stiefel
-    [T_, SIG, S_] = svd(PU' * PU);
-    SIG = diag(SIG);
-    U = PU * (T_ * diag(sqrt(1./SIG)) * S_');
-    F_manpg(k) = F(U);
-    if abs(F_manpg(k) - F_manpg(k-1)) <= 1e-8, break; end
-end
-iter_manpg = k;
-fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_manpg, F_manpg(iter_manpg));
+option_manpg = struct( ...
+    'n',          n, ...
+    'r',          p, ...
+    'mu',         mu, ...
+    'maxiter',    N, ...
+    'tol',        1e-8*n*p, ...
+    'inner_iter', 100, ...
+    'type',       1, ...
+    'phi_init',   X0);
+
+[~, ~, ~, time_manpg, iter_manpg, flag_manpg, ~, ~, F_manpg] = ...
+    manpg_orth_sparse(0.5*H, option_manpg);
+
+fprintf('  done in %.1fs at iter %d, F=%.4e (flag=%d)\n', ...
+    time_manpg, iter_manpg, F_manpg(iter_manpg), flag_manpg);
+
+% ============================== ManPG-Ada ============================
+% Same shift A = H/2. option.F_manpg = -Inf disables the F*-reference early
+% stop the repo uses for benchmarking against a precomputed baseline.
+fprintf('ManPG-Ada...\n');
+option_ada = struct( ...
+    'n',          n, ...
+    'r',          p, ...
+    'mu',         mu, ...
+    'maxiter',    N, ...
+    'tol',        1e-8*n*p, ...
+    'inner_iter', 100, ...
+    'type',       1, ...
+    'phi_init',   X0, ...
+    'F_manpg',    -Inf);
+
+[~, ~, ~, time_ada, iter_manpg_ada, flag_ada, ~, ~, F_manpg_ada] = ...
+    manpg_orth_sparse_adap(0.5*H, option_ada);
+
+fprintf('  done in %.1fs at iter %d, F=%.4e (flag=%d)\n', ...
+    time_ada, iter_manpg_ada, F_manpg_ada(iter_manpg_ada), flag_ada);
+
 
 % ============================== RADMM =======================================
 fprintf('RADMM...\n');

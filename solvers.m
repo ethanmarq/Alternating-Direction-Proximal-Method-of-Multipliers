@@ -121,14 +121,17 @@ iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', toc, iter_radmm, F_radmm(iter_radmm));
 
 % ============================== PLOT ========================================
-Fstar = min([F_adpmm(1:iter_adpmm) F_manpg(1:iter_manpg) F_radmm(1:iter_radmm) F_adpmm_svd(1:iter_adpmm_svd)]);
+Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
+             F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
+             F_radmm(1:iter_radmm)]);
 figure('Visible', 'off');
-semilogy(1:iter_adpmm, F_adpmm(1:iter_adpmm) - Fstar + eps, 'LineWidth', 2); hold on;
-semilogy(1:iter_adpmm_svd, F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2); hold on;
-semilogy(1:iter_manpg, F_manpg(1:iter_manpg) - Fstar + eps, 'LineWidth', 2);
-semilogy(1:iter_radmm, F_radmm(1:iter_radmm) - Fstar + eps, 'LineWidth', 2);
+semilogy(1:iter_adpmm,     F_adpmm(1:iter_adpmm)         - Fstar + eps, 'LineWidth', 2); hold on;
+semilogy(1:iter_adpmm_svd, F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2);
+semilogy(1:iter_manpg,     F_manpg(1:iter_manpg)         - Fstar + eps, 'LineWidth', 2);
+semilogy(1:iter_manpg_ada, F_manpg_ada(1:iter_manpg_ada) - Fstar + eps, 'LineWidth', 2);
+semilogy(1:iter_radmm,     F_radmm(1:iter_radmm)         - Fstar + eps, 'LineWidth', 2);
 xlabel('Iteration'); ylabel('F - F^*');
-legend('ADPMM','ADPMM-SVD','ManPG','RADMM','Location','best','AutoUpdate', 'on');
+legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','Location','best','AutoUpdate','on');
 title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
 grid on;
 ylim([1e-2, 1e5]);

@@ -79,6 +79,7 @@ else
 end
 
 F(1) = -sum(sum(X.*(AX)))+h(X);
+time_vec(1) = 0;
 
 num_inner = zeros(maxiter,1);
 
@@ -237,6 +238,7 @@ for iter = 2:maxiter
     X = Z; AX = AZ;
 
     F(iter) = F_trial;
+    time_vec(iter) = toc;
 
 
 
@@ -254,7 +256,7 @@ X((abs(X)<=1e-5))=0;
 
 X_manpg=X;
 
-time_manpg = toc;
+time_manpg = time_vec;
 
 mean_ssn = sum(num_inner)/(iter-1);
 
@@ -272,7 +274,7 @@ if iter == maxiter && sqrt(normDsquared)/t > 1e-1
 
     % time_manpg = 0;
 
-    fprintf('ManPG-ada hit maxiter without meeting the gradient tolerance (flag=0).\n');
+    fprintf('ManPG hit maxiter without meeting the gradient tolerance (flag=0).\n');
 
     iter_adap = iter;
     sparsity= sum(sum(X_manpg==0))/(n*r);

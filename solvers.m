@@ -1,7 +1,7 @@
 % solvers.m
 % Minimal sPCA solver comparison on a single dataset.
 % Solvers ported from the trusted-author repo (compare_sPCA.m).
-% Expects H, X0, n, p, mu, N, rho, eta, t, L, F to be in workspace.
+% Expects H, X0, n, p, mu, N, rho, eta, t, L, F, dataset to be in workspace.
 
 addpath('misc');
 
@@ -133,25 +133,173 @@ end
 iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm, F_radmm(iter_radmm));
 
+% ============================== SOC =========================================
+%fprintf('SOC...\n');
+%X = X0; Y = X0;
+%Lambda = zeros(size(X));
+%F_soc = zeros(1, N); F_soc(1) = F(X);
+%T_soc = zeros(1, N); T_soc(1) = 0;
+%tic
+%for k = 2:N
+%    temp_F = @(X) -0.5*trace(X.'*H*X) + mu*sum(sum(abs(X))) + rho / 2 * norm(X - Y + Lambda, 'fro')^2;
+%    % X step, proximal gradient method to
+%    % solve f + g + quadratic term
+%    for i = 1:100
+%        grad_f = -H*X + rho * (X - Y + Lambda);
+%        grad_map = (X - wthresh(X - eta*grad_f, 's', mu * eta)) / eta;
+%        if norm(grad_map, 'fro') < 1e-8
+%            break;
+%        end
+%        X = X - eta * grad_map;
+%    end
+%    % Y step: a projection step
+%    [U,~,V] = svd(X + Lambda);
+%    Y = U*eye(n,p)*V.';
+%    % Lambda step
+%    Lambda = Lambda + (X - Y);
+%    F_soc(k) = F(Y);
+%    T_soc(k) = toc;
+%    if abs(F_soc(k) - F_soc(k-1)) <= 1e-8, break; end
+%end
+%iter_soc = k;
+%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_soc(iter_soc), iter_soc, F_soc(iter_soc));
+
+% ============================== MADMM =======================================
+fprintf('MADMM...\n');
+X = X0; Y = X0;
+Lambda = zeros(size(X));
+F_madmm = zeros(1, N); F_madmm(1) = F(X);
+T_madmm = zeros(1, N); T_madmm(1) = 0;
+tic
+for k = 2:N
+    % X step: a Riemannian gradient step
+    for i = 1:100
+        gx = -H*X + rho*(X - Y + Lambda);
+        rgx = proj(X, gx);
+        if norm(rgx, 'fro') < 1e-8
+            break;
+        end
+        X = retr(X, -eta*rgx);
+    end
+    % Y step
+    Y = wthresh(X + Lambda ,'s', mu/rho);
+    % Lambda step
+    Lambda = Lambda + (X - Y);
+    F_madmm(k) = F(X);
+    T_madmm(k) = toc;
+    if abs(F_madmm(k) - F_madmm(k-1)) <= 1e-8, break; end
+end
+iter_madmm = k;
+fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_madmm(iter_madmm), iter_madmm, F_madmm(iter_madmm));
+
+% ============================== ARADMM ======================================
+fprintf('ARADMM...\n');
+X = X0; Z = X0;
+Lambda = zeros(size(X));
+etak = 1/L; rhok = 5; beta0 = 50; crho = 1; cbeta = 50;
+newcv = norm(Z - X, 'fro');
+inicv = norm(Z - X, 'fro');
+F_aradmm = zeros(1, N); F_aradmm(1) = F(X);
+T_aradmm = zeros(1, N); T_aradmm(1) = 0;
+tic
+for k = 2:N
+    oldcv = newcv;
+    %etak = etak/k^(1/3);
+    % Z step
+    Z = wthresh(X + Lambda/rhok, 's', mu/rhok);
+    % X step: a gradient step
+    for i = 1:1
+        gx = -H*X + Lambda + rhok*(X - Z);
+        rgx = proj(X, gx);
+        X = retr(X, -(etak)*rgx/(k^(1/3)));
+    end
+    % update beta and rho
+    newcv = norm(Z - X, 'fro');
+    if newcv > oldcv
+        betak = min(beta0*(inicv*(log(2))^2)/(newcv*(k+1)^2 *log(k+2)), cbeta/(k^(1/3)*(log(k+1)^2)));
+        rhok = crho*rhok*(k^(1/3));
+    end
+    % Lambda step
+    Lambda = Lambda + betak*(X - Z);
+    F_aradmm(k) = F(X);
+    T_aradmm(k) = toc;
+    if abs(F_aradmm(k) - F_aradmm(k-1)) <= 1e-8, break; end
+end
+iter_aradmm = k;
+fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_aradmm(iter_aradmm), iter_aradmm, F_aradmm(iter_aradmm));
+
+% ============================== OADMM =======================================
+fprintf('OADMM...\n');
+X = X0; Z = X0;
+Lambda = zeros(size(X));
+orho = 10*mu; sigma = 1.1; delta = 1e-3;
+% Helper closures (replicated from compare_sPCA.m so this block is self-contained)
+f_oadmm       = @(X) -0.5*trace(X.'*H*X);
+g_oadmm       = @(Y) mu*sum(sum(abs(Y)));
+g_gamma_oadmm = @(Z,gamma) mu*(g_oadmm(wthresh(Z,'s',gamma)) + 1/(2*gamma)*norm(wthresh(Z,'s',gamma) - Z,'fro')^2);
+L_M           = @(X,Z,Lambda,gamma,rho) f_oadmm(X) + mu*g_gamma_oadmm(Z,gamma) + trace(Lambda.'*(X-Z)) + rho/2*norm(X-Z)^2;
+F_oadmm = zeros(1, N); F_oadmm(1) = F(X);
+T_oadmm = zeros(1, N); T_oadmm(1) = 0;
+tic
+for k = 2:N
+    ogamma = 4/((2-sigma)*orho);
+    Xbar = X;
+    oeta = 1/(L + orho);
+    % X step: a gradient step
+    for i = 1:1
+        gx = -H*Xbar + Lambda + orho*(Xbar - Z);
+        rgx = proj(Xbar, gx);
+        X = retr(Xbar, -(oeta)*rgx);
+        Gra_norm = norm(rgx, 'fro');
+        % line search
+        ls_cut = 1;
+        while L_M(X,Z,Lambda,ogamma,orho) > L_M(Xbar,Z,Lambda,ogamma,orho) - delta*oeta*Gra_norm^2 && ls_cut <= 10
+            oeta = 0.5*oeta;
+            X = retr(Xbar, -(oeta)*rgx);
+            ls_cut = ls_cut + 1;
+        end
+    end
+    % Z step (also update Y)
+    Y = wthresh(X + Lambda/orho, 's', mu*(1+orho*ogamma)/orho);
+    Z = (Y/ogamma + Lambda + orho*X) / (1/ogamma + orho);
+    % Lambda step
+    Lambda = Lambda + sigma*orho*(X - Z);
+    orho = orho*(1+0.1*k^(1/3));
+    F_oadmm(k) = F(X);
+    T_oadmm(k) = toc;
+    if abs(F_oadmm(k) - F_oadmm(k-1)) <= 1e-8 && F_oadmm(k) <= min(F_aradmm), break; end
+end
+iter_oadmm = k;
+fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
+
 % ============================== PLOT ========================================
 Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
              F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
-             F_radmm(1:iter_radmm)]);
+             F_radmm(1:iter_radmm) ...
+            F_madmm(1:iter_madmm) ...
+             F_aradmm(1:iter_aradmm) F_oadmm(1:iter_oadmm)]);
 figure('Visible', 'off');
 %semilogy(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm)         - Fstar + eps, 'LineWidth', 2); hold on;
 %semilogy(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2);
 %semilogy(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg)         - Fstar + eps, 'LineWidth', 2);
 %semilogy(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) - Fstar + eps, 'LineWidth', 2);
 %semilogy(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm)         - Fstar + eps, 'LineWidth', 2);
+%semilogy(T_soc(1:iter_soc),             F_soc(1:iter_soc)             - Fstar + eps, 'LineWidth', 2);
+%semilogy(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm)         - Fstar + eps, 'LineWidth', 2);
+%semilogy(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm)       - Fstar + eps, 'LineWidth', 2);
+%semilogy(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm)         - Fstar + eps, 'LineWidth', 2);
 plot(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm) + eps, 'LineWidth', 2); hold on;
 plot(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) + eps, 'LineWidth', 2);
 plot(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg) + eps, 'LineWidth', 2);
 plot(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) + eps, 'LineWidth', 2);
 plot(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm) + eps, 'LineWidth', 2);
+%plot(T_soc(1:iter_soc),             F_soc(1:iter_soc) + eps, 'LineWidth', 2);
+plot(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm) + eps, 'LineWidth', 2);
+plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 2);
+plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
 xlabel('Time (s)'); ylabel('F');
-legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','Location','best','AutoUpdate','on');
-title(sprintf('n=%d, p=%d, \\mu=%g, \\rho=%g', n, p, mu, rho));
+legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','SOC','MADMM','ARADMM','OADMM','Location','best','AutoUpdate','on');
+title(sprintf('Obj by Time (n=%d, p=%d, \\mu=%g)', n, p, mu));
 grid on;
-ylim([1e-2, 1e5]);
-saveas(gcf, sprintf('spca-%d-%.2d.png', p, rho));
+saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f.png', dataset, n, p, mu));
 fprintf('Saved: png\n');

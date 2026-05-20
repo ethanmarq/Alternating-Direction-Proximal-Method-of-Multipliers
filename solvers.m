@@ -165,32 +165,32 @@ fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm,
 %fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_soc(iter_soc), iter_soc, F_soc(iter_soc));
 
 % ============================== MADMM =======================================
-fprintf('MADMM...\n');
-X = X0; Y = X0;
-Lambda = zeros(size(X));
-F_madmm = zeros(1, N); F_madmm(1) = F(X);
-T_madmm = zeros(1, N); T_madmm(1) = 0;
-tic
-for k = 2:N
-    % X step: a Riemannian gradient step
-    for i = 1:100
-        gx = -H*X + rho*(X - Y + Lambda);
-        rgx = proj(X, gx);
-        if norm(rgx, 'fro') < 1e-8
-            break;
-        end
-        X = retr(X, -eta*rgx);
-    end
-    % Y step
-    Y = wthresh(X + Lambda ,'s', mu/rho);
-    % Lambda step
-    Lambda = Lambda + (X - Y);
-    F_madmm(k) = F(X);
-    T_madmm(k) = toc;
-    if abs(F_madmm(k) - F_madmm(k-1)) <= 1e-8, break; end
-end
-iter_madmm = k;
-fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_madmm(iter_madmm), iter_madmm, F_madmm(iter_madmm));
+%fprintf('MADMM...\n');
+%X = X0; Y = X0;
+%Lambda = zeros(size(X));
+%F_madmm = zeros(1, N); F_madmm(1) = F(X);
+%T_madmm = zeros(1, N); T_madmm(1) = 0;
+%tic
+%for k = 2:N
+%    % X step: a Riemannian gradient step
+%    for i = 1:100
+%        gx = -H*X + rho*(X - Y + Lambda);
+%        rgx = proj(X, gx);
+%        if norm(rgx, 'fro') < 1e-8
+%            break;
+%        end
+%        X = retr(X, -eta*rgx);
+%    end
+%    % Y step
+%    Y = wthresh(X + Lambda ,'s', mu/rho);
+%    % Lambda step
+%    Lambda = Lambda + (X - Y);
+%    F_madmm(k) = F(X);
+%    T_madmm(k) = toc;
+%    if abs(F_madmm(k) - F_madmm(k-1)) <= 1e-8, break; end
+%end
+%iter_madmm = k;
+%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_madmm(iter_madmm), iter_madmm, F_madmm(iter_madmm));
 
 % ============================== ARADMM ======================================
 fprintf('ARADMM...\n');
@@ -273,11 +273,10 @@ iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
 
 % ============================== PLOT ========================================
-Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
-             F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
-             F_radmm(1:iter_radmm) ...
-            F_madmm(1:iter_madmm) ...
-             F_aradmm(1:iter_aradmm) F_oadmm(1:iter_oadmm)]);
+%Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
+%             F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
+%             F_radmm(1:iter_radmm) ...
+%             F_aradmm(1:iter_aradmm) F_oadmm(1:iter_oadmm)]);
 figure('Visible', 'off');
 %semilogy(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm)         - Fstar + eps, 'LineWidth', 2); hold on;
 %semilogy(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2);
@@ -294,12 +293,13 @@ plot(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg) + eps, 'LineWidth', 2)
 plot(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) + eps, 'LineWidth', 2);
 plot(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm) + eps, 'LineWidth', 2);
 %plot(T_soc(1:iter_soc),             F_soc(1:iter_soc) + eps, 'LineWidth', 2);
-plot(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm) + eps, 'LineWidth', 2);
+%plot(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm) + eps, 'LineWidth', 2);
 plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 2);
 plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
 xlabel('Time (s)'); ylabel('F');
-legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','SOC','MADMM','ARADMM','OADMM','Location','best','AutoUpdate','on');
-title(sprintf('Obj by Time (n=%d, p=%d, \\mu=%g)', n, p, mu));
+legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','best','AutoUpdate','on');
+ds_disp = strrep(dataset, '_', '\_');
+title(sprintf('Obj by Time, %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
 grid on;
 saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f.png', dataset, n, p, mu));
 fprintf('Saved: png\n');

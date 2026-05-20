@@ -8,14 +8,37 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 
+salloc --nodes=1 --mem=64gb --cpus-per-task=64 --time=08:00:00
 module load matlab
 matlab -nodisplay -nosplash
 dataset = 'rcv1_train';
 load_h
-N=5000; solvers
-clear
+N=500; p=100; solvers
+exit
+exit
+
+
+
 dataset = 'news20'
 load_h
-N=5000; solvers
+N=500; p=100; solvers
 exit
 exit
+
+
+salloc --nodes=1 --mem=64gb --cpus-per-task=64 --time=08:00:00
+module load matlab
+matlab -nodisplay -nosplash
+dataset = 'rcv1_train';
+load_h
+N=500; p=10; solvers
+
+module load matlab
+matlab -nodisplay -nosplash
+dataset = 'rcv1_train';
+load_h
+N=500; p=100; solvers
+
+dataset = 'rcv1_train';
+load_h
+N=500; p=200; solvers

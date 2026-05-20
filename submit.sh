@@ -13,7 +13,7 @@ module load matlab
 matlab -nodisplay -nosplash
 dataset = 'rcv1_train';
 load_h
-N=500; p=100; solvers
+N=5000; p=50; time_limit=360; solvers
 exit
 exit
 

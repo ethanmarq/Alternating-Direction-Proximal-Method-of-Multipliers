@@ -5,6 +5,7 @@ p   = 50;       % number of sparse components
 mu  = 0.10;     % l1 weight
 N   = 100;      % outer iterations
 seed = 0;
+time_limit = 60; % seconds
 
 % ============================== LOAD ========================================
 S = load(data_path);                % expects S.X (n_samples x p_features)

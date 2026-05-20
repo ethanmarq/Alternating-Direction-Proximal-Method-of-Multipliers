@@ -1,7 +1,8 @@
 % solvers.m
 % Minimal sPCA solver comparison on a single dataset.
 % Solvers ported from the trusted-author repo (compare_sPCA.m).
-% Expects H, X0, n, p, mu, N, rho, eta, t, L, F, dataset to be in workspace.
+% Expects H, X0, n, p, mu, N, rho, eta, t, L, F, dataset, time_limit to be in workspace.
+% time_limit (seconds) caps wall-clock time per algorithm; N is just a safety cap.
 
 addpath('misc');
 
@@ -35,7 +36,7 @@ for k = 2:N
     Y = Y + rho*(X - Z);
     F_adpmm(k) = F(Z);
     T_adpmm(k) = toc;
-    if abs(F_adpmm(k) - F_adpmm(k-1)) <= 1e-8, break; end
+    if T_adpmm(k) >= time_limit, break; end
 end
 iter_adpmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm(iter_adpmm), iter_adpmm, F_adpmm(iter_adpmm));
@@ -58,7 +59,7 @@ for k = 2:N
     Y = Y + rho*(X - Z);
     F_adpmm_svd(k) = F(Z);
     T_adpmm_svd(k) = toc;
-    if abs(F_adpmm_svd(k) - F_adpmm_svd(k-1)) <= 1e-8, break; end
+    if T_adpmm_svd(k) >= time_limit, break; end
 end
 iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
@@ -73,9 +74,10 @@ option_manpg = struct( ...
     'mu',         mu, ...
     'maxiter',    N, ...
     'tol',        1e-8*n*p, ...
-    'inner_iter', 100, ...
+    'inner_iter', 10, ...
     'type',       1, ...
-    'phi_init',   X0);
+    'phi_init',   X0, ...
+    'time_limit', time_limit);
 
 [~, ~, ~, time_manpg, iter_manpg, flag_manpg, ~, ~, F_manpg] = ...
     manpg_orth_sparse(0.5*H, option_manpg);
@@ -94,10 +96,11 @@ option_ada = struct( ...
     'mu',         mu, ...
     'maxiter',    N, ...
     'tol',        1e-8*n*p, ...
-    'inner_iter', 100, ...
+    'inner_iter', 10, ...
     'type',       1, ...
     'phi_init',   X0, ...
-    'F_manpg',    -Inf);
+    'F_manpg',    -Inf, ...
+    'time_limit', time_limit);
 
 [~, ~, ~, time_ada, iter_manpg_ada, flag_ada, ~, ~, F_manpg_ada] = ...
     manpg_orth_sparse_adap(0.5*H, option_ada);
@@ -128,7 +131,7 @@ for k = 2:N
     Lambda = Lambda + rho*(X - Z);
     F_radmm(k) = F(X);
     T_radmm(k) = toc;
-    if abs(F_radmm(k) - F_radmm(k-1)) <= 1e-8, break; end
+    if T_radmm(k) >= time_limit, break; end
 end
 iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm, F_radmm(iter_radmm));
@@ -223,7 +226,7 @@ for k = 2:N
     Lambda = Lambda + betak*(X - Z);
     F_aradmm(k) = F(X);
     T_aradmm(k) = toc;
-    if abs(F_aradmm(k) - F_aradmm(k-1)) <= 1e-8, break; end
+    if T_aradmm(k) >= time_limit, break; end
 end
 iter_aradmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_aradmm(iter_aradmm), iter_aradmm, F_aradmm(iter_aradmm));
@@ -267,7 +270,7 @@ for k = 2:N
     orho = orho*(1+0.1*k^(1/3));
     F_oadmm(k) = F(X);
     T_oadmm(k) = toc;
-    if abs(F_oadmm(k) - F_oadmm(k-1)) <= 1e-8 && F_oadmm(k) <= min(F_aradmm), break; end
+    if T_oadmm(k) >= time_limit, break; end
 end
 iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
@@ -298,6 +301,8 @@ plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 
 plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
 xlabel('Time (s)'); ylabel('F');
 legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','best','AutoUpdate','on');
+lgd.FontSize = 9;
+drawnow;
 ds_disp = strrep(dataset, '_', '\_');
 title(sprintf('Obj by Time, %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
 grid on;

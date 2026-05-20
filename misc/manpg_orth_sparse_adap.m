@@ -19,6 +19,7 @@ mu = option.mu;
 maxiter = option.maxiter;
 
 tol = option.tol;
+time_limit = option.time_limit;
 
 h = @(X) sum(mu.*sum(abs(X)));
 
@@ -223,6 +224,7 @@ for iter = 2:maxiter
 
     F(iter) = F_trial;
     time_vec(iter) = toc;
+    if time_vec(iter) >= time_limit, break; end
 
 
 
@@ -295,10 +297,10 @@ else
 
 
 
-    fprintf('ManPG_adap:Iter ***  Fval *** CPU  **** sparsity ***inner_inexact&averge_No. ** opt_norm ** total_linsea \n');
+    %fprintf('ManPG_adap:Iter ***  Fval *** CPU  **** sparsity ***inner_inexact&averge_No. ** opt_norm ** total_linsea \n');
 
-    print_format = ' %i     %1.5e    %1.2f     %1.2f         %4i   %2.2f                %1.3e        %d \n';
+    %print_format = ' %i     %1.5e    %1.2f     %1.2f         %4i   %2.2f                %1.3e        %d \n';
 
-    fprintf(1,print_format, iter-1,min(F), time_manpg,sparsity, inner_flag, sum(num_inner)/(iter-1) ,sqrt(normDsquared)/t,num_linesearch);
+    %fprintf(1,print_format, iter-1,min(F), time_manpg,sparsity, inner_flag, sum(num_inner)/(iter-1) ,sqrt(normDsquared)/t,num_linesearch);
 
 end

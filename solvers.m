@@ -17,14 +17,14 @@ T_adpmm = zeros(1, N); T_adpmm(1) = 0;
 tic
 for k = 2:N
     % X-update: orthogonalize L*X + H*X + rho*Z - Y via Newton-Schulz
-    B = L*X + H*X + rho*Z - Y;
+    B = H*X + rho*Z - Y;
     nrmB = norm(B, 'fro');
     if nrmB < eps
         W = B;
     else
         W = B / (nrmB * 1.05);
         Ip = eye(p);
-        for j = 1:5
+        for j = 1:10
             W = 0.5 * W * (3*Ip - W'*W);
         end
     end
@@ -49,7 +49,7 @@ T_adpmm_svd = zeros(1, N); T_adpmm_svd(1) = 0;
 tic
 for k = 2:N
     % X-update: orthogonalize L*X + H*X + rho*Z - Y via SVD
-    B = L*X + H*X + rho*Z - Y;
+    B = H*X + rho*Z - Y;
     [U, ~, V] = svd(B, 'econ');
     X = U*V';
     % Z-update: soft-thresholding
@@ -236,7 +236,6 @@ fprintf('OADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
 orho = 10*mu; sigma = 1.1; delta = 1e-3;
-% Helper closures (replicated from compare_sPCA.m so this block is self-contained)
 f_oadmm       = @(X) -0.5*trace(X.'*H*X);
 g_oadmm       = @(Y) mu*sum(sum(abs(Y)));
 g_gamma_oadmm = @(Z,gamma) mu*(g_oadmm(wthresh(Z,'s',gamma)) + 1/(2*gamma)*norm(wthresh(Z,'s',gamma) - Z,'fro')^2);
@@ -300,11 +299,13 @@ plot(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm) + eps, 'LineWidth', 2)
 plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 2);
 plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
 xlabel('Time (s)'); ylabel('F');
-legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','best','AutoUpdate','on');
+legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','northeast','AutoUpdate','on');
 lgd.FontSize = 9;
+lgd.NumColumns = 1;
+lgd.ItemTokenSize = [15, 10];
 drawnow;
 ds_disp = strrep(dataset, '_', '\_');
 title(sprintf('Obj by Time, %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
 grid on;
-saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f.png', dataset, n, p, mu));
+saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f-b.png', dataset, n, p, mu));
 fprintf('Saved: png\n');

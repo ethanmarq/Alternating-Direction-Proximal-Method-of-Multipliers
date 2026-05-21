@@ -99,5 +99,5 @@ plot(1:iter_adpmm2, F_adpmm2(1:iter_adpmm2), 'LineWidth', 2);
 plot(1:iter_adpmm3, F_adpmm3(1:iter_adpmm3), 'LineWidth', 2);
 xlabel('Iteration'); ylabel('F(X)');
 grid on;
-legend('ADPMM', 'ADPMMv2', 'ADPMMv3', 'AutoUpdate', 'on');
+legend('ADPMM-l2', 'ADPMM-fro', 'ADPMM-svd', 'AutoUpdate', 'on');
 saveas(gcf, sprintf('ADPMM-analysis.png'));

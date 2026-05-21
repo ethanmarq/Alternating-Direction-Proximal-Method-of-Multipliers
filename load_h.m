@@ -5,12 +5,14 @@ p   = 50;       % number of sparse components
 mu  = 0.10;     % l1 weight
 N   = 100;      % outer iterations
 seed = 0;
-time_limit = 60; % seconds
-
+time_limit = 60;
 % ============================== LOAD ========================================
 S = load(data_path);                % expects S.X (n_samples x p_features)
 X_data = S.X;
-H = X_data' * X_data;               % p_feat x p_feat, no centering
+a  = size(X_data, 1);
+b = mean(X_data, 1);
+H  = X_data' * X_data;
+H = H - a*(b'*b);
 [n, ~] = size(H);
 fprintf('H: %dx%d, nnz=%d, density=%.2e\n', n, n, nnz(H), full(nnz(H)/n^2));
 
@@ -26,3 +28,4 @@ F = @(X) -0.5*trace(X'*(H*X)) + mu*sum(abs(X(:)));
 
 % Common starting point
 rng(seed);
+

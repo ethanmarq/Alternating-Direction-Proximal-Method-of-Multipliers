@@ -1,23 +1,15 @@
 load_h;
-N = 1000;
-p_list = [100, 1000, 10000, 100000];
+N = 5000;
+time_limit = 360;
+%p_list = [100, 1000, 10000, 100000];
+mu_list = [0.01, 0.1, 1, 5, 10, 20, 50, 100];
 
-results = struct();
-for i = 1:numel(p_list)
-    p = p_list(i);
-    fprintf('\n=========== p = %d ===========\n', p);
+for i = 1:numel(mu_list)
+    mu = mu_list(i);
+    fprintf('\n=========== mu = %.2f ===========\n', mu);
     try
         solvers;   % runs your existing script with current N, p
-        results(i).p           = p;
-        results(i).iter_adpmm  = iter_adpmm;
-        results(i).iter_manpg  = iter_manpg;
-        results(i).F_adpmm     = F_adpmm(1:iter_adpmm);
-        results(i).F_manpg     = F_manpg(1:iter_manpg);
-        % ...add whatever else you want to keep
-        save(sprintf('sweep_p%d.mat', p), '-v7.3');
     catch ME
-        fprintf(2, 'p=%d failed: %s\n', p, ME.message);
-        results(i).error = ME.message;
+        fprintf(2, 'mu=%.2f failed: %s\n', mu, ME.message);
     end
 end
-save('sweep_all.mat', 'results', '-v7.3');

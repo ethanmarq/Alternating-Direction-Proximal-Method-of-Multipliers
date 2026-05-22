@@ -1,37 +1,39 @@
-#!/usr/bin/env sh
-#SBATCH --job-name=spca
-#SBATCH --output=logs/spca_%A_%a.out
-#SBATCH --error=logs/spca_%A_%a.err
-#SBATCH --time=12:00:00
-#SBATCH --mem=64G
+#!/usr/bin/env bash
+#SBATCH --job-name=spca_mu
+#SBATCH --output=logs/spca_mu_%A_%a.out
+#SBATCH --error=logs/spca_mu_%A_%a.err
+#SBATCH --time=08:00:00
+#SBATCH --mem=256G
 #SBATCH --cpus-per-task=64
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
+#SBATCH --array=0-7
 
+set -euo pipefail
+mkdir -p logs
 
-salloc --nodes=1 --mem=256gb --cpus-per-task=64 --time=08:00:00
-module load matlab
-matlab -nodisplay -nosplash
-dataset = 'news20'
-load_h
-N=500; p=200; time_limit=360; solvers
-exit
-exit
+# Map array index -> mu value
+MU_LIST=(0.01 0.1 1 5 10 20 50 100)
+MU=${MU_LIST[$SLURM_ARRAY_TASK_ID]}
 
-
-salloc --nodes=1 --mem=64gb --cpus-per-task=64 --time=08:00:00
-module load matlab
-matlab -nodisplay -nosplash
-dataset = 'rcv1_train';
-load_h
-N=500; p=10; solvers
+echo "[task ${SLURM_ARRAY_TASK_ID}] mu=${MU} on $(hostname) at $(date)"
 
 module load matlab
-matlab -nodisplay -nosplash
-dataset = 'rcv1_train';
-load_h
-N=500; p=100; solvers
 
-dataset = 'rcv1_train';
-load_h
-N=500; p=200; solvers
+matlab -nodisplay -nosplash -batch "\
+dataset = 'news20'; \
+load_h; \
+N = 500; p = 200; time_limit = 360; \
+mu = ${MU}; \
+F = @(X) -0.5*trace(X'*(H*X)) + mu*sum(abs(X(:))); \
+solvers;"
+
+# Interative Version
+# salloc --nodes=1 --mem=256gb --cpus-per-task=64 --time=08:00:00
+# module load matlab
+# matlab -nodisplay -nosplash
+# dataset = 'news20'
+# load_h
+# N=500; p=200; time_limit=360; solvers
+# exit
+# exit

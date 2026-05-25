@@ -50,7 +50,7 @@ T_adpmm_svd = zeros(1, N); T_adpmm_svd(1) = 0;
 tic
 for k = 2:N
     % X-update: orthogonalize L*X + Lap*X + rho*Z - Y via SVD
-    B = L*X + Lap*X + rho*Z - Y;
+    B = L*X - Lap*X + rho*Z - Y;
     [U, ~, V] = svd(B, 'econ');
     X = U*V';
     % Z-update: soft-thresholding
@@ -66,8 +66,8 @@ iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
 
 % ============================== ManPG ================================
-% Repo function: f(X) = -tr(X'AX), so pass A = Lap/2 with type=1 to match our
-% F(X) = -0.5*tr(X'LapX). Effective prox threshold inside SSN is mu*t (correct).
+% Repo function: f(X) = tr(X'AX), so pass A = Lap/2 with type=1 to match our
+% F(X) = 0.5*tr(X'LapX). Effective prox threshold inside SSN is mu*t (correct).
 fprintf('ManPG...\n');
 option_manpg = struct( ...
     'n',          n, ...
@@ -81,7 +81,7 @@ option_manpg = struct( ...
     'time_limit', time_limit);
 
 [~, ~, ~, time_manpg, iter_manpg, flag_manpg, ~, ~, F_manpg] = ...
-    manpg_orth_sparse(0.5*Lap, option_manpg);
+    manpg_orth_sparse(-0.5*Lap, option_manpg);
 
 T_manpg = time_manpg(1:iter_manpg);
 total_manpg = T_manpg(end);
@@ -104,7 +104,7 @@ option_ada = struct( ...
     'time_limit', time_limit);
 
 [~, ~, ~, time_ada, iter_manpg_ada, flag_ada, ~, ~, F_manpg_ada] = ...
-    manpg_orth_sparse_adap(0.5*Lap, option_ada);
+    manpg_orth_sparse_adap(-0.5*Lap, option_ada);
 
   T_manpg_ada = time_ada(1:iter_manpg_ada);
   total_ada = T_manpg_ada(end);
@@ -122,7 +122,7 @@ T_radmm = zeros(1, N); T_radmm(1) = 0;
 tic
 for k = 2:N
     % X step: one Riemannian gradient step
-    gx = -Lap*X + Lambda + rho*(X - Z);
+    gx = Lap*X + Lambda + rho*(X - Z);
     rgx = proj(X, gx);
     X = retr(X, -eta*rgx);
     % Z step (with embedded Y soft-threshold)
@@ -130,7 +130,7 @@ for k = 2:N
     Z = (Yk/gamma + Lambda + rho*X) / (1/gamma + rho);
     % Dual step
     Lambda = Lambda + rho*(X - Z);
-    F_radmm(k) = F(X);
+    F_radmm(k) = F(Z);
     T_radmm(k) = toc;
     if T_radmm(k) >= time_limit, break; end
 end
@@ -213,7 +213,7 @@ for k = 2:N
     Z = wthresh(X + Lambda/rhok, 's', mu/rhok);
     % X step: a gradient step
     for i = 1:1
-        gx = -Lap*X + Lambda + rhok*(X - Z);
+        gx = Lap*X + Lambda + rhok*(X - Z);
         rgx = proj(X, gx);
         X = retr(X, -(etak)*rgx/(k^(1/3)));
     end
@@ -225,7 +225,7 @@ for k = 2:N
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
-    F_aradmm(k) = F(X);
+    F_aradmm(k) = F(Z);
     T_aradmm(k) = toc;
     if T_aradmm(k) >= time_limit, break; end
 end
@@ -237,7 +237,7 @@ fprintf('OADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
 orho = 10*mu; sigma = 1.1; delta = 1e-3;
-f_oadmm       = @(X) -0.5*trace(X.'*Lap*X);
+f_oadmm       = @(X) 0.5*trace(X.'*Lap*X);
 g_oadmm       = @(Y) mu*sum(sum(abs(Y)));
 g_gamma_oadmm = @(Z,gamma) mu*(g_oadmm(wthresh(Z,'s',gamma)) + 1/(2*gamma)*norm(wthresh(Z,'s',gamma) - Z,'fro')^2);
 L_M           = @(X,Z,Lambda,gamma,rho) f_oadmm(X) + mu*g_gamma_oadmm(Z,gamma) + trace(Lambda.'*(X-Z)) + rho/2*norm(X-Z)^2;
@@ -250,7 +250,7 @@ for k = 2:N
     oeta = 1/(L + orho);
     % X step: a gradient step
     for i = 1:1
-        gx = -Lap*Xbar + Lambda + orho*(Xbar - Z);
+        gx = Lap*Xbar + Lambda + orho*(Xbar - Z);
         rgx = proj(Xbar, gx);
         X = retr(Xbar, -(oeta)*rgx);
         Gra_norm = norm(rgx, 'fro');
@@ -268,7 +268,7 @@ for k = 2:N
     % Lambda step
     Lambda = Lambda + sigma*orho*(X - Z);
     orho = orho*(1+0.1*k^(1/3));
-    F_oadmm(k) = F(X);
+    F_oadmm(k) = F(Z);
     T_oadmm(k) = toc;
     if T_oadmm(k) >= time_limit, break; end
 end

@@ -10,14 +10,12 @@ addpath('misc');
 X0 = orth(randn(n, p));
 
 % ============================== ADPMM =======================================
-% Paper's AD-PMM (NS-ADMM): G = L*I + Lap, X-update via Newton-Schulz.
 fprintf('ADPMM...\n');
 X = X0; Z = X0; Y = zeros(n, p);
 F_adpmm = zeros(1, N); F_adpmm(1) = F(X);
 T_adpmm = zeros(1, N); T_adpmm(1) = 0;
 tic
 for k = 2:N
-    % X-update: orthogonalize L*X + Lap*X + rho*Z - Y via Newton-Schulz
     B = L*X - Lap*X + rho*Z - Y;
     nrmB = norm(B, 'fro');
     if nrmB < eps
@@ -66,8 +64,6 @@ iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
 
 % ============================== ManPG ================================
-% Repo function: f(X) = -tr(X'AX), so pass A = -Lap/2 with type=1 to match our
-% F(X) = 0.5*tr(X'LapX). Effective prox threshold inside SSN is mu*t (correct).
 fprintf('ManPG...\n');
 option_manpg = struct( ...
     'n',          n, ...

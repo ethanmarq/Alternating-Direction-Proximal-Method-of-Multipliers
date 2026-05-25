@@ -287,12 +287,13 @@ styles  = {'-','-','-','-','-','-','-'};   styles{2} = ':';
 markers = {'none','none','none','none','none','none','none'};  markers{2} = 'o';
 
 figure('Visible','off'); hold on;
-order = [1 3 4 5 6 7 2];
+order = [1 2 3 4 5 6 7];
 for i = order
     semilogy(Tc{i}, max(cummin(Fc{i}) - Fstar, eps), ...
         'LineStyle', styles{i}, 'LineWidth', 2);
 end
 set(gca,'YScale','log');
+ylim([1e-17, inf]);
 xlabel('Time (s)'); ylabel('F - F^\ast');
 ds_disp = strrep(dataset,'_','\_');
 title(sprintf('SSC %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));

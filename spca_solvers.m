@@ -275,37 +275,28 @@ iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
 
 % ============================== PLOT ========================================
-%Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
-%             F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
-%             F_radmm(1:iter_radmm) ...
-%             F_aradmm(1:iter_aradmm) F_oadmm(1:iter_oadmm)]);
-figure('Visible', 'off');
-%semilogy(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm)         - Fstar + eps, 'LineWidth', 2); hold on;
-%semilogy(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_soc(1:iter_soc),             F_soc(1:iter_soc)             - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm)       - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm)         - Fstar + eps, 'LineWidth', 2);
-plot(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm) + eps, 'LineWidth', 2); hold on;
-plot(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) + eps, 'LineWidth', 2);
-plot(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg) + eps, 'LineWidth', 2);
-plot(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) + eps, 'LineWidth', 2);
-plot(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm) + eps, 'LineWidth', 2);
-%plot(T_soc(1:iter_soc),             F_soc(1:iter_soc) + eps, 'LineWidth', 2);
-%plot(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm) + eps, 'LineWidth', 2);
-plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 2);
-plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
-xlabel('Time (s)'); ylabel('F');
-legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','northeast','AutoUpdate','on');
-lgd.FontSize = 9;
-lgd.NumColumns = 1;
-lgd.ItemTokenSize = [15, 10];
-drawnow;
-ds_disp = strrep(dataset, '_', '\_');
-title(sprintf('Obj by Time, %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
-grid on;
-saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f-b.png', dataset, n, p, mu));
+algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
+Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
+      T_manpg(1:iter_manpg), T_manpg_ada(1:iter_manpg_ada), ...
+      T_radmm(1:iter_radmm), T_aradmm(1:iter_aradmm), T_oadmm(1:iter_oadmm)};
+Fc = {F_adpmm(1:iter_adpmm), F_adpmm_svd(1:iter_adpmm_svd), ...
+      F_manpg(1:iter_manpg), F_manpg_ada(1:iter_manpg_ada), ...
+      F_radmm(1:iter_radmm), F_aradmm(1:iter_aradmm), F_oadmm(1:iter_oadmm)};
+
+Fstar = min(cellfun(@min, Fc));
+styles = {'-','-','-','-','-','-','-'};   styles{2} = ':';   % ADPMM-SVD dotted
+
+figure('Visible','off'); hold on;
+h = gobjects(numel(Fc),1);
+order = [1 3 4 5 6 7 2];                  % plot ADPMM-SVD last so it sits on top
+for i = order
+    h(i) = semilogy(Tc{i}, max(cummin(Fc{i}) - Fstar, eps), ...
+        'LineStyle', styles{i}, 'LineWidth', 2);
+end
+set(gca,'YScale','log');
+xlabel('Time (s)'); ylabel('F - F^\ast');
+ds_disp = strrep(dataset,'_','\_');
+title(sprintf('sPCA %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
+legend(h, algs, 'Location','northeast'); grid on;
+saveas(gcf, sprintf('spca_%s_n%d_p%d_mu%.2f_subopt.png', dataset, n, p, mu));
 fprintf('Saved: png\n');

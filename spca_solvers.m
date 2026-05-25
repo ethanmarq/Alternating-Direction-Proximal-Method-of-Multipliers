@@ -129,7 +129,7 @@ for k = 2:N
     Z = (Yk/gamma + Lambda + rho*X) / (1/gamma + rho);
     % Dual step
     Lambda = Lambda + rho*(X - Z);
-    F_radmm(k) = F(X);
+    F_radmm(k) = F(Z);
     T_radmm(k) = toc;
     if T_radmm(k) >= time_limit, break; end
 end
@@ -224,7 +224,7 @@ for k = 2:N
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
-    F_aradmm(k) = F(X);
+    F_aradmm(k) = F(Z);
     T_aradmm(k) = toc;
     if T_aradmm(k) >= time_limit, break; end
 end
@@ -267,7 +267,7 @@ for k = 2:N
     % Lambda step
     Lambda = Lambda + sigma*orho*(X - Z);
     orho = orho*(1+0.1*k^(1/3));
-    F_oadmm(k) = F(X);
+    F_oadmm(k) = F(Z);
     T_oadmm(k) = toc;
     if T_oadmm(k) >= time_limit, break; end
 end

@@ -1,15 +1,17 @@
 % ============================== CONFIG ======================================
-%dataset = 'news20' %news20.binary: 2 classes
+dataset = 'news20' %news20.binary: 2 classes
 data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
 p   = 2;       % number of classes
 k   = 10;       % nearest neighbors for graph construction
 mu  = 0.10;     % l1 weight
-N   = 100;      % outer iterations
+N   = 10000;      % outer iterations
 seed = 0;
-time_limit = 60;
+time_limit = 10;
 % ============================== LOAD ========================================
 S = load(data_path); % expects S.X (n_samples x p_features)
 X_data = S.X;
+n = size(X_data, 1);
+fprintf('X_data: %d samples x %d features, nnz=%d\n', n, size(X_data,2), nnz(X_data));
 
 rng(seed);
 % X_data: INPUT
@@ -17,17 +19,26 @@ rng(seed);
 % noramlized: symmetric normalization (L_sym), otherwise unnormalized D-W
 n = size(X_data, 1); % length of first column
 
-[idx, dist] = knnsearch(X_data, X_data, 'K', k+1); % +1 because col 1 is self
-idx  = idx(:, 2:end); % drop self-match
-dist = dist(:, 2:end);
+% L2-normalize rows so inner product = cosine similarity
+rn = sqrt(sum(X_data.^2, 2));  rn(rn < eps) = 1;
+Xn = spdiags(1./rn, 0, n, n) * X_data; % sparse, unit-norm rows
 
-sigma = median(dist(:)); %RBF kernel width, using median heuristic
-if sigma < eps, sigma = 1; end % fix bad points
+% Block-wise top-k cosine neighbours
+bs = 2000; % rows per block
+I  = zeros(n, k);  Dk = zeros(n, k);
+for s = 1:bs:n
+    e = min(s+bs-1, n);
+    Sblk = full(Xn(s:e, :) * Xn'); % (e-s+1) x n
+    Sblk(sub2ind(size(Sblk), 1:(e-s+1), s:e)) = -inf; % mask self
+    [vals, ix] = maxk(Sblk, k, 2); % top-k per row
+    I(s:e, :)  = ix;
+    Dk(s:e, :) = vals;
+    fprintf('  knn rows %d-%d / %d\n', s, e, n);
+end
 
 rows = repmat((1:n)', 1, k);
-aff  = exp(-(dist.^2) / (2*sigma^2));
-W = sparse(rows(:), idx(:), aff(:), n, n);
-
+aff  = max(Dk, 0); % cosine similarity as weight
+W = sparse(rows(:), I(:), aff(:), n, n);
 W = max(W, W');
 
 deg = full(sum(W, 2));

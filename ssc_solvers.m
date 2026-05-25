@@ -66,7 +66,7 @@ iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
 
 % ============================== ManPG ================================
-% Repo function: f(X) = tr(X'AX), so pass A = Lap/2 with type=1 to match our
+% Repo function: f(X) = -tr(X'AX), so pass A = -Lap/2 with type=1 to match our
 % F(X) = 0.5*tr(X'LapX). Effective prox threshold inside SSN is mu*t (correct).
 fprintf('ManPG...\n');
 option_manpg = struct( ...
@@ -83,6 +83,7 @@ option_manpg = struct( ...
 [~, ~, ~, time_manpg, iter_manpg, flag_manpg, ~, ~, F_manpg] = ...
     manpg_orth_sparse(-0.5*Lap, option_manpg);
 
+iter_manpg = min([iter_manpg, numel(time_manpg), numel(F_manpg)]);
 T_manpg = time_manpg(1:iter_manpg);
 total_manpg = T_manpg(end);
 
@@ -106,8 +107,9 @@ option_ada = struct( ...
 [~, ~, ~, time_ada, iter_manpg_ada, flag_ada, ~, ~, F_manpg_ada] = ...
     manpg_orth_sparse_adap(-0.5*Lap, option_ada);
 
-  T_manpg_ada = time_ada(1:iter_manpg_ada);
-  total_ada = T_manpg_ada(end);
+iter_manpg = min([iter_manpg, numel(time_manpg), numel(F_manpg)]);
+T_manpg_ada = time_ada(1:iter_manpg_ada);
+total_ada = T_manpg_ada(end);
 
 fprintf('  done in %.1fs at iter %d, F=%.4e (flag=%d)\n', ...
     total_ada, iter_manpg_ada, F_manpg_ada(iter_manpg_ada), flag_ada);
@@ -200,7 +202,7 @@ fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm,
 fprintf('ARADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
-etak = 1/L; rhok = 5; beta0 = 50; crho = 1; cbeta = 50;
+etak = 1/L; rhok = 5; beta0 = 1; crho = 1; cbeta = 5;
 newcv = norm(Z - X, 'fro');
 inicv = norm(Z - X, 'fro');
 F_aradmm = zeros(1, N); F_aradmm(1) = F(X);
@@ -236,7 +238,7 @@ fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_aradmm(iter_aradmm), iter_arad
 fprintf('OADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
-orho = 10*mu; sigma = 1.1; delta = 1e-3;
+orho = L; sigma = 1.1; delta = 1e-3;
 f_oadmm       = @(X) 0.5*trace(X.'*Lap*X);
 g_oadmm       = @(Y) mu*sum(sum(abs(Y)));
 g_gamma_oadmm = @(Z,gamma) mu*(g_oadmm(wthresh(Z,'s',gamma)) + 1/(2*gamma)*norm(wthresh(Z,'s',gamma) - Z,'fro')^2);
@@ -276,37 +278,28 @@ iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
 
 % ============================== PLOT ========================================
-%Fstar = min([F_adpmm(1:iter_adpmm) F_adpmm_svd(1:iter_adpmm_svd) ...
-%             F_manpg(1:iter_manpg) F_manpg_ada(1:iter_manpg_ada) ...
-%             F_radmm(1:iter_radmm) ...
-%             F_aradmm(1:iter_aradmm) F_oadmm(1:iter_oadmm)]);
-figure('Visible', 'off');
-%semilogy(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm)         - Fstar + eps, 'LineWidth', 2); hold on;
-%semilogy(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_soc(1:iter_soc),             F_soc(1:iter_soc)             - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm)         - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm)       - Fstar + eps, 'LineWidth', 2);
-%semilogy(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm)         - Fstar + eps, 'LineWidth', 2);
-plot(T_adpmm(1:iter_adpmm),         F_adpmm(1:iter_adpmm) + eps, 'LineWidth', 2); hold on;
-plot(T_adpmm_svd(1:iter_adpmm_svd), F_adpmm_svd(1:iter_adpmm_svd) + eps, 'LineWidth', 2);
-plot(T_manpg(1:iter_manpg),         F_manpg(1:iter_manpg) + eps, 'LineWidth', 2);
-plot(T_manpg_ada(1:iter_manpg_ada), F_manpg_ada(1:iter_manpg_ada) + eps, 'LineWidth', 2);
-plot(T_radmm(1:iter_radmm),         F_radmm(1:iter_radmm) + eps, 'LineWidth', 2);
-%plot(T_soc(1:iter_soc),             F_soc(1:iter_soc) + eps, 'LineWidth', 2);
-%plot(T_madmm(1:iter_madmm),         F_madmm(1:iter_madmm) + eps, 'LineWidth', 2);
-plot(T_aradmm(1:iter_aradmm),       F_aradmm(1:iter_aradmm) + eps, 'LineWidth', 2);
-plot(T_oadmm(1:iter_oadmm),         F_oadmm(1:iter_oadmm) + eps, 'LineWidth', 2);
-xlabel('Time (s)'); ylabel('F');
-legend('ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM','Location','northeast','AutoUpdate','on');
-lgd.FontSize = 9;
-lgd.NumColumns = 1;
-lgd.ItemTokenSize = [15, 10];
-drawnow;
-ds_disp = strrep(dataset, '_', '\_');
-title(sprintf('Obj by Time, %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
-grid on;
-saveas(gcf, sprintf('%s_n%d_p%d_mu%.2f-b.png', dataset, n, p, mu));
+algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
+Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
+      T_manpg(1:iter_manpg), T_manpg_ada(1:iter_manpg_ada), ...
+      T_radmm(1:iter_radmm), T_aradmm(1:iter_aradmm), T_oadmm(1:iter_oadmm)};
+Fc = {F_adpmm(1:iter_adpmm), F_adpmm_svd(1:iter_adpmm_svd), ...
+      F_manpg(1:iter_manpg), F_manpg_ada(1:iter_manpg_ada), ...
+      F_radmm(1:iter_radmm), F_aradmm(1:iter_aradmm), F_oadmm(1:iter_oadmm)};
+
+Fstar = min(cellfun(@min, Fc));
+styles  = {'-','-','-','-','-','-','-'};   styles{2} = ':';
+markers = {'none','none','none','none','none','none','none'};  markers{2} = 'o';
+
+figure('Visible','off'); hold on;
+order = [1 3 4 5 6 7 2];
+for i = order
+    semilogy(Tc{i}, max(cummin(Fc{i}) - Fstar, eps), ...
+        'LineStyle', styles{i}, 'LineWidth', 2);
+end
+set(gca,'YScale','log');
+xlabel('Time (s)'); ylabel('F - F^\ast');
+ds_disp = strrep(dataset,'_','\_');
+title(sprintf('SSC %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
+legend(algs,'Location','northeast'); grid on;
+saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt.png', dataset, n, p, mu));
 fprintf('Saved: png\n');

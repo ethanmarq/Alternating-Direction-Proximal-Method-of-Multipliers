@@ -219,7 +219,7 @@ for k = 2:N
     newcv = norm(Z - X, 'fro');
     if newcv > oldcv
         betak = min(beta0*(inicv*(log(2))^2)/(newcv*(k+1)^2 *log(k+2)), cbeta/(k^(1/3)*(log(k+1)^2)));
-        rhok = crho*rhok*(k^(1/3));
+        rhok = min(crho*rhok*(k^(1/3)), 5*L);
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
@@ -274,6 +274,8 @@ iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
 
 % ============================== PLOT ========================================
+x_mode = 'iter';
+
 algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
       T_manpg(1:iter_manpg), T_manpg_ada(1:iter_manpg_ada), ...
@@ -282,21 +284,35 @@ Fc = {F_adpmm(1:iter_adpmm), F_adpmm_svd(1:iter_adpmm_svd), ...
       F_manpg(1:iter_manpg), F_manpg_ada(1:iter_manpg_ada), ...
       F_radmm(1:iter_radmm), F_aradmm(1:iter_aradmm), F_oadmm(1:iter_oadmm)};
 
+if strcmp(x_mode, 'time')
+    Xc = Tc;  xlbl = 'Time (s)';   xtag = 'time';
+else
+    Xc = cellfun(@(f) 1:numel(f), Fc, 'UniformOutput', false);
+    xlbl = 'Iteration'; xtag = 'iter';
+end
+
 Fstar = min(cellfun(@min, Fc));
 styles  = {'-','-','-','-','-','-','-'};   styles{2} = ':';
-markers = {'none','none','none','none','none','none','none'};  markers{2} = 'o';
 
 figure('Visible','off'); hold on;
+h = gobjects(numel(Fc),1);
 order = [1 2 3 4 5 6 7];
+m = 25; % Show every mth point
+% for i = order
+%     semilogy(Xc{i}, Fc{i} - Fstar, eps), ...
+%         'LineStyle', styles{i}, 'LineWidth', 2);
+% end
 for i = order
-    semilogy(Tc{i}, max(cummin(Fc{i}) - Fstar, eps), ...
+    h(i) = plot(Xc{i}(1:m:end), Fc{i}(1:m:end), ...
         'LineStyle', styles{i}, 'LineWidth', 2);
 end
-set(gca,'YScale','log');
-ylim([1e-17, inf]);
-xlabel('Time (s)'); ylabel('F - F^\ast');
+%set(gca,'YScale','log');
+%ylim([1e-17, inf]);
+%xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
+ylim([1e-4, inf]);
+xlabel(xlbl); ylabel('F');
 ds_disp = strrep(dataset,'_','\_');
 title(sprintf('SSC %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
 legend(algs,'Location','northeast'); grid on;
-saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt.png', dataset, n, p, mu));
+saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
 fprintf('Saved: png\n');

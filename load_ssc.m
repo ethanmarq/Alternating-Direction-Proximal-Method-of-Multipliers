@@ -1,8 +1,8 @@
 % ============================== CONFIG ======================================
-dataset = 'news20' %news20.binary: 2 classes
+dataset = 'rcv1_train' %news20.binary: 2 classes
 data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
 p   = 2;       % number of classes
-mu  = .1;     % l1 weight
+mu  = 1;     % l1 weight
 N   = 10000;      % outer iterations
 seed = 0;
 time_limit = 10;

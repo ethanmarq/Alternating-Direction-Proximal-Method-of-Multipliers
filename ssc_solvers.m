@@ -18,15 +18,26 @@ tic
 for k = 2:N
     B = L*X - Lap*X + rho*Z - Y;
     nrmB = norm(B, 'fro');
-    if nrmB < eps
-        W = B;
-    else
-        W = B / (nrmB * 1.05);
-        Ip = eye(p);
-        for j = 1:10
-            W = 0.5 * W * (3*Ip - W'*W);
-        end
+    % if nrmB < eps
+    %     W = B;
+    % else
+    %     W = B / (nrmB * 1.05);
+    %     Ip = eye(p);
+    %     for j = 1:10
+    %         W = 0.5 * W * (3*Ip - W'*W);
+    %     end
+    % end
+    a = 3.4445;  b = -4.7750;  c = 2.0315;
+    W = B;
+    W = B / (nrmB + 1e-7);
+    transposed = size(W, 1) > size(W, 2);
+    if transposed, W = W'; end
+    for j = 1:5
+        A = W * W';
+        B = b*A + c*A*A;
+        W = a*W + B*W;
     end
+    if transposed, W = W'; end
     X = W;
     % Z-update: soft-thresholding
     V = X + Y/rho;
@@ -220,7 +231,7 @@ fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm,
 fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== PLOT ========================================
-x_mode = 'time';
+x_mode = 'iter';
 
 algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...

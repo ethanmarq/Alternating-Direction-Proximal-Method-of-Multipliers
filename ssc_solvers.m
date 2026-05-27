@@ -39,6 +39,7 @@ for k = 2:N
 end
 iter_adpmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm(iter_adpmm), iter_adpmm, F_adpmm(iter_adpmm));
+fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== ADPMM-SVD =======================================
 fprintf('ADPMM-SVD...\n');
@@ -62,6 +63,7 @@ for k = 2:N
 end
 iter_adpmm_svd = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
+fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== ManPG ================================
 fprintf('ManPG...\n');
@@ -134,65 +136,7 @@ for k = 2:N
 end
 iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm, F_radmm(iter_radmm));
-
-% ============================== SOC =========================================
-%fprintf('SOC...\n');
-%X = X0; Y = X0;
-%Lambda = zeros(size(X));
-%F_soc = zeros(1, N); F_soc(1) = F(X);
-%T_soc = zeros(1, N); T_soc(1) = 0;
-%tic
-%for k = 2:N
-%    temp_F = @(X) -0.5*trace(X.'*Lap*X) + mu*sum(sum(abs(X))) + rho / 2 * norm(X - Y + Lambda, 'fro')^2;
-%    % X step, proximal gradient method to
-%    % solve f + g + quadratic term
-%    for i = 1:100
-%        grad_f = -Lap*X + rho * (X - Y + Lambda);
-%        grad_map = (X - wthresh(X - eta*grad_f, 's', mu * eta)) / eta;
-%        if norm(grad_map, 'fro') < 1e-8
-%            break;
-%        end
-%        X = X - eta * grad_map;
-%    end
-%    % Y step: a projection step
-%    [U,~,V] = svd(X + Lambda);
-%    Y = U*eye(n,p)*V.';
-%    % Lambda step
-%    Lambda = Lambda + (X - Y);
-%    F_soc(k) = F(Y);
-%    T_soc(k) = toc;
-%    if abs(F_soc(k) - F_soc(k-1)) <= 1e-8, break; end
-%end
-%iter_soc = k;
-%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_soc(iter_soc), iter_soc, F_soc(iter_soc));
-
-% ============================== MADMM =======================================
-%fprintf('MADMM...\n');
-%X = X0; Y = X0;
-%Lambda = zeros(size(X));
-%F_madmm = zeros(1, N); F_madmm(1) = F(X);
-%T_madmm = zeros(1, N); T_madmm(1) = 0;
-%tic
-%for k = 2:N
-%    % X step: a Riemannian gradient step
-%    for i = 1:100
-%        gx = -Lap*X + rho*(X - Y + Lambda);
-%        rgx = proj(X, gx);
-%        if norm(rgx, 'fro') < 1e-8
-%            break;
-%        end
-%        X = retr(X, -eta*rgx);
-%    end
-%    % Y step
-%    Y = wthresh(X + Lambda ,'s', mu/rho);
-%    % Lambda step
-%    Lambda = Lambda + (X - Y);
-%    F_madmm(k) = F(X);
-%    T_madmm(k) = toc;
-%    if abs(F_madmm(k) - F_madmm(k-1)) <= 1e-8, break; end
-%end
-%iter_madmm = k;
-%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_madmm(iter_madmm), iter_madmm, F_madmm(iter_madmm));
+fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== ARADMM ======================================
 fprintf('ARADMM...\n');
@@ -219,7 +163,7 @@ for k = 2:N
     newcv = norm(Z - X, 'fro');
     if newcv > oldcv
         betak = min(beta0*(inicv*(log(2))^2)/(newcv*(k+1)^2 *log(k+2)), cbeta/(k^(1/3)*(log(k+1)^2)));
-        rhok = min(crho*rhok*(k^(1/3)), 5*L);
+        rhok = crho*rhok*(k^(1/3));
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
@@ -229,6 +173,7 @@ for k = 2:N
 end
 iter_aradmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_aradmm(iter_aradmm), iter_aradmm, F_aradmm(iter_aradmm));
+fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== OADMM =======================================
 fprintf('OADMM...\n');
@@ -272,9 +217,10 @@ for k = 2:N
 end
 iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
+fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== PLOT ========================================
-x_mode = 'iter';
+x_mode = 'time';
 
 algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
@@ -292,24 +238,24 @@ else
 end
 
 Fstar = min(cellfun(@min, Fc));
-styles  = {'-','-','-','-','-','-','-'};   styles{2} = ':';
+styles  = {'-',':','-',':',':','-','-'};   styles{2} = ':';
 
 figure('Visible','off'); hold on;
 h = gobjects(numel(Fc),1);
 order = [1 2 3 4 5 6 7];
-m = 25; % Show every mth point
+m = 1; % Show every mth point
 % for i = order
-%     semilogy(Xc{i}, Fc{i} - Fstar, eps), ...
+%     semilogy(Xc{i}, Fc{i} - Fstar, ...
 %         'LineStyle', styles{i}, 'LineWidth', 2);
 % end
 for i = order
     h(i) = plot(Xc{i}(1:m:end), Fc{i}(1:m:end), ...
         'LineStyle', styles{i}, 'LineWidth', 2);
 end
-%set(gca,'YScale','log');
+% set(gca,'YScale','log');
 %ylim([1e-17, inf]);
-%xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
-ylim([1e-4, inf]);
+% xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
+ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
 xlabel(xlbl); ylabel('F');
 ds_disp = strrep(dataset,'_','\_');
 title(sprintf('SSC %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));

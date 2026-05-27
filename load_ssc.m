@@ -18,20 +18,18 @@ rng(seed);
 % noramlized: symmetric normalization (L_sym), otherwise unnormalized D-W
 n = size(X_data, 1); % length of first column
 
-X     = full(X_data);                        % raw data (dense)
-% D2    = pdist2(X, X, 'squaredeuclidean');    % n x n squared distances
-
-X      = X_data;                            % keep sparse (15932 x 62061)
-nx2    = sum(X.^2, 2);                      % n x 1, row squared norms
-D2     = nx2 + nx2' - 2*(X*X');            % n x n, sparse multiply
-D2     = max(full(D2), 0);                  % numerical cleanup
+X     = full(X_data);
+X      = X_data;
+nx2    = sum(X.^2, 2);
+D2     = nx2 + nx2' - 2*(X*X');
+D2     = max(full(D2), 0);
 D2(1:n+1:end) = 0;
 
-sigma2 = median(D2(D2 > 0));                % bandwidth: median heuristic
-W     = exp(-D2 / (2*sigma2));              % Gaussian kernel
-W(1:n+1:end) = 0;                           % zero the diagonal
+sigma2 = median(D2(D2 > 0));
+W     = exp(-D2 / (2*sigma2));
+W(1:n+1:end) = 0;
 deg   = sum(W, 2);
-Lap   = diag(deg) - W;                      % unnormalized Laplacian
+Lap   = diag(deg) - W;
 
 F = @(X) 0.5*trace(X'*(Lap*X)) + mu*sum(abs(X(:)));
 

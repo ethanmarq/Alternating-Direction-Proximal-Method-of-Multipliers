@@ -27,12 +27,13 @@ for k = 2:N
     %         W = 0.5 * W * (3*Ip - W'*W);
     %     end
     % end
-    a = 3.4445;  b = -4.7750;  c = 2.0315;
+    %a = 3.4445;  b = -4.7750;  c = 2.0315;
+    c = 0.4; a = 1.5 + c; b = -0.5 - 2*c;
     W = B;
     W = B / (nrmB + 1e-7);
     transposed = size(W, 1) > size(W, 2);
     if transposed, W = W'; end
-    for j = 1:5
+    for j = 1:3
         A = W * W';
         B = b*A + c*A*A;
         W = a*W + B*W;
@@ -44,11 +45,13 @@ for k = 2:N
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm(k) = F(Z);
+    F_adpmm(k) = F(X);
     T_adpmm(k) = toc;
     if T_adpmm(k) >= time_limit, break; end
 end
 iter_adpmm = k;
+fprintf('  ||X''X-I||_F=%.2e (vs sqrt(p)=%.2f)\n', ...
+    norm(X'*X - eye(p), 'fro'), sqrt(p));
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm(iter_adpmm), iter_adpmm, F_adpmm(iter_adpmm));
 fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
@@ -68,11 +71,13 @@ for k = 2:N
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm_svd(k) = F(Z);
+    F_adpmm_svd(k) = F(X);
     T_adpmm_svd(k) = toc;
     if T_adpmm_svd(k) >= time_limit, break; end
 end
 iter_adpmm_svd = k;
+fprintf('  ||X''X-I||_F=%.2e (vs sqrt(p)=%.2f)\n', ...
+    norm(X'*X - eye(p), 'fro'), sqrt(p));
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_adpmm_svd(iter_adpmm_svd), iter_adpmm_svd, F_adpmm_svd(iter_adpmm_svd));
 fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
@@ -141,7 +146,7 @@ for k = 2:N
     Z = (Yk/gamma + Lambda + rho*X) / (1/gamma + rho);
     % Dual step
     Lambda = Lambda + rho*(X - Z);
-    F_radmm(k) = F(Z);
+    F_radmm(k) = F(X);
     T_radmm(k) = toc;
     if T_radmm(k) >= time_limit, break; end
 end
@@ -153,7 +158,7 @@ fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 fprintf('ARADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
-etak = 1/L; rhok = 5; beta0 = 1; crho = 1; cbeta = 5;
+etak = 1/L; rhok = 5; betak = 1; beta0 = 1; crho = 1; cbeta = 5;
 newcv = norm(Z - X, 'fro');
 inicv = norm(Z - X, 'fro');
 F_aradmm = zeros(1, N); F_aradmm(1) = F(X);
@@ -178,7 +183,7 @@ for k = 2:N
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
-    F_aradmm(k) = F(Z);
+    F_aradmm(k) = F(X);
     T_aradmm(k) = toc;
     if T_aradmm(k) >= time_limit, break; end
 end
@@ -190,7 +195,7 @@ fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 fprintf('OADMM...\n');
 X = X0; Z = X0;
 Lambda = zeros(size(X));
-orho = L; sigma = 1.1; delta = 1e-3;
+orho = .5*L; sigma = 1.1; delta = 1e-3;
 f_oadmm       = @(X) 0.5*trace(X.'*Lap*X);
 g_oadmm       = @(Y) mu*sum(sum(abs(Y)));
 g_gamma_oadmm = @(Z,gamma) mu*(g_oadmm(wthresh(Z,'s',gamma)) + 1/(2*gamma)*norm(wthresh(Z,'s',gamma) - Z,'fro')^2);
@@ -222,7 +227,7 @@ for k = 2:N
     % Lambda step
     Lambda = Lambda + sigma*orho*(X - Z);
     orho = orho*(1+0.1*k^(1/3));
-    F_oadmm(k) = F(Z);
+    F_oadmm(k) = F(X);
     T_oadmm(k) = toc;
     if T_oadmm(k) >= time_limit, break; end
 end
@@ -233,7 +238,7 @@ fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 % ============================== PLOT ========================================
 x_mode = 'iter';
 
-algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
+algs = {'NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
       T_manpg(1:iter_manpg), T_manpg_ada(1:iter_manpg_ada), ...
       T_radmm(1:iter_radmm), T_aradmm(1:iter_aradmm), T_oadmm(1:iter_oadmm)};
@@ -269,7 +274,8 @@ end
 ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
 xlabel(xlbl); ylabel('F');
 ds_disp = strrep(dataset,'_','\_');
-title(sprintf('SSC %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
+% k = p: classes, lambda = mu; sparsity coefficient - to match paper
+title(sprintf('SSC %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu));
 legend(algs,'Location','northeast'); grid on;
 saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
 fprintf('Saved: png\n');

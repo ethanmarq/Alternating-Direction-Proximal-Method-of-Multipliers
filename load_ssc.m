@@ -1,16 +1,24 @@
 % ============================== CONFIG ======================================
-dataset = 'rcv1_train' %news20.binary: 2 classes
+dataset = 'mnist'
+p = 10; % Classes
+% 10 Classes:
+% - usps
+% - mnist
+% 101 Classes:
+% - rcv1_topics_train
+% 2 Classes:
+% - news20
+% - rcv1_train
 data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
-p   = 2;       % number of classes
-mu  = 1;     % l1 weight
-N   = 10000;      % outer iterations
+% mu  = .5; % Sparsity Weight
+N   = 500; % Iterations
+time_limit = 3600; % Time Limit
 seed = 0;
-time_limit = 10;
 % ============================== LOAD ========================================
 S = load(data_path); % expects S.X (n_samples x p_features)
 X_data = S.X;
 n = size(X_data, 1);
-% mu = 1 / sqrt(n);
+mu = 1 / sqrt(n);
 fprintf('X_data: %d samples x %d features, nnz=%d\n', n, size(X_data,2), nnz(X_data));
 
 rng(seed);

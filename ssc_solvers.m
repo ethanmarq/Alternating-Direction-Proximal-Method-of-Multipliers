@@ -276,6 +276,7 @@ xlabel(xlbl); ylabel('F');
 ds_disp = strrep(dataset,'_','\_');
 % k = p: classes, lambda = mu; sparsity coefficient - to match paper
 title(sprintf('SSC %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu));
-legend(algs,'Location','northeast'); grid on;
+lgd = legend(algs,'Location','northeast'); grid on;
+lgd.ItemTokenSize = [30, 18];
 saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
 fprintf('Saved: png\n');

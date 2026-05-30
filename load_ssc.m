@@ -14,6 +14,7 @@ data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
 N   = 500; % Iterations
 time_limit = 3600; % Time Limit
 seed = 0;
+x_mode = 'iter';   % 'iter' or 'time'
 % ============================== LOAD ========================================
 S = load(data_path); % expects S.X (n_samples x p_features)
 X_data = S.X;

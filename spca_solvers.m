@@ -19,22 +19,33 @@ for k = 2:N
     % X-update: orthogonalize L*X + H*X + rho*Z - Y via Newton-Schulz
     B = H*X + rho*Z - Y;
     nrmB = norm(B, 'fro');
-    if nrmB < eps
-        W = B;
-    else
-        W = B / (nrmB * 1.05);
-        Ip = eye(p);
-        for j = 1:10
-            W = 0.5 * W * (3*Ip - W'*W);
-        end
+    % if nrmB < eps
+    %     W = B;
+    % else
+    %     W = B / (nrmB * 1.05);
+    %     Ip = eye(p);
+    %     for j = 1:10
+    %         W = 0.5 * W * (3*Ip - W'*W);
+    %     end
+    % end
+    c = 0.4; a = 1.5 + c; b = -0.5 - 2*c;
+    W = B;
+    W = B / (nrmB + 1e-7);
+    transposed = size(W, 1) > size(W, 2);
+    if transposed, W = W'; end
+    for j = 1:5
+        A = W * W';
+        B = b*A + c*A*A;
+        W = a*W + B*W;
     end
+    if transposed, W = W'; end
     X = W;
     % Z-update: soft-thresholding
     V = X + Y/rho;
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm(k) = F(Z);
+    F_adpmm(k) = F(X);
     T_adpmm(k) = toc;
     if T_adpmm(k) >= time_limit, break; end
 end
@@ -57,7 +68,7 @@ for k = 2:N
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm_svd(k) = F(Z);
+    F_adpmm_svd(k) = F(X);
     T_adpmm_svd(k) = toc;
     if T_adpmm_svd(k) >= time_limit, break; end
 end
@@ -129,7 +140,7 @@ for k = 2:N
     Z = (Yk/gamma + Lambda + rho*X) / (1/gamma + rho);
     % Dual step
     Lambda = Lambda + rho*(X - Z);
-    F_radmm(k) = F(Z);
+    F_radmm(k) = F(X);
     T_radmm(k) = toc;
     if T_radmm(k) >= time_limit, break; end
 end
@@ -224,7 +235,7 @@ for k = 2:N
     end
     % Lambda step
     Lambda = Lambda + betak*(X - Z);
-    F_aradmm(k) = F(Z);
+    F_aradmm(k) = F(X);
     T_aradmm(k) = toc;
     if T_aradmm(k) >= time_limit, break; end
 end
@@ -267,7 +278,7 @@ for k = 2:N
     % Lambda step
     Lambda = Lambda + sigma*orho*(X - Z);
     orho = orho*(1+0.1*k^(1/3));
-    F_oadmm(k) = F(Z);
+    F_oadmm(k) = F(X);
     T_oadmm(k) = toc;
     if T_oadmm(k) >= time_limit, break; end
 end
@@ -275,7 +286,7 @@ iter_oadmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm, F_oadmm(iter_oadmm));
 
 % ============================== PLOT ========================================
-algs = {'ADPMM','ADPMM-SVD','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
+algs = {'NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...
       T_manpg(1:iter_manpg), T_manpg_ada(1:iter_manpg_ada), ...
       T_radmm(1:iter_radmm), T_aradmm(1:iter_aradmm), T_oadmm(1:iter_oadmm)};
@@ -283,20 +294,37 @@ Fc = {F_adpmm(1:iter_adpmm), F_adpmm_svd(1:iter_adpmm_svd), ...
       F_manpg(1:iter_manpg), F_manpg_ada(1:iter_manpg_ada), ...
       F_radmm(1:iter_radmm), F_aradmm(1:iter_aradmm), F_oadmm(1:iter_oadmm)};
 
+if strcmp(x_mode, 'time')
+    Xc = Tc;  xlbl = 'Time (s)';   xtag = 'time';
+else
+    Xc = cellfun(@(f) 1:numel(f), Fc, 'UniformOutput', false);
+    xlbl = 'Iteration'; xtag = 'iter';
+end
+
 Fstar = min(cellfun(@min, Fc));
-styles = {'-','-','-','-','-','-','-'};   styles{2} = ':';   % ADPMM-SVD dotted
+styles  = {'-',':','-',':',':','-','-'};   styles{2} = ':';
 
 figure('Visible','off'); hold on;
 h = gobjects(numel(Fc),1);
-order = [1 3 4 5 6 7 2];                  % plot ADPMM-SVD last so it sits on top
+order = [1 2 3 4 5 6 7];
+m = 1; % Show every mth point
+% for i = order
+%     semilogy(Xc{i}, Fc{i} - Fstar, ...
+%         'LineStyle', styles{i}, 'LineWidth', 2);
+% end
 for i = order
-    h(i) = semilogy(Tc{i}, max(cummin(Fc{i}) - Fstar, eps), ...
+    h(i) = plot(Xc{i}(1:m:end), Fc{i}(1:m:end), ...
         'LineStyle', styles{i}, 'LineWidth', 2);
 end
-set(gca,'YScale','log');
-xlabel('Time (s)'); ylabel('F - F^\ast');
+% set(gca,'YScale','log');
+%ylim([1e-17, inf]);
+% xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
+ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
+xlabel(xlbl); ylabel('F');
 ds_disp = strrep(dataset,'_','\_');
-title(sprintf('sPCA %s (n=%d, p=%d, \\mu=%g)', ds_disp, n, p, mu));
-legend(h, algs, 'Location','northeast'); grid on;
-saveas(gcf, sprintf('spca_%s_n%d_p%d_mu%.2f_subopt.png', dataset, n, p, mu));
+% k = p: components, lambda = mu; sparsity coefficient - to match paper
+title(sprintf('sPCA %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu));
+lgd = legend(algs,'Location','northeast'); grid on;
+lgd.ItemTokenSize = [30, 18];
+saveas(gcf, sprintf('spca_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
 fprintf('Saved: png\n');

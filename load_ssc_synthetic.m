@@ -12,9 +12,10 @@ sep        = 5;       % cluster center scale (well-separated blobs)
 N          = 100;
 seed       = 0;
 time_limit = 30;
+x_mode = 'iter';   % 'iter' or 'time'
+
 
 rng(seed);
-
 % ============================== BUILD DATA ==================================
 n       = n_per * p;
 centers = sep * randn(p, d);

@@ -29,11 +29,31 @@ F = @(X) -0.5*trace(X'*(H*X)) + mu*sum(abs(X(:))); \
 solvers;"
 
 # Interative Version
-# salloc --nodes=1 --mem=256gb --cpus-per-task=64 --time=08:00:00
-# module load matlab
-# matlab -nodisplay -nosplash
-# dataset = 'news20'
-# load_h
-# N=500; p=200; time_limit=360; solvers
-# exit
-# exit
+salloc --nodes=1 --mem=256gb --cpus-per-task=64 --time=12:00:00
+module load matlab
+matlab -nodisplay
+# SSC MNIST
+clear
+dataset = 'mnist'; p = 10;
+load_ssc;
+x_mode = 'time'; N = 10000; time_limit = 360; ssc_solvers;
+
+# SSC USPS
+clear
+dataset = 'usps'; p = 10;
+load_ssc;
+x_mode = 'time'; N = 10000; time_limit = 100; ssc_solvers;
+
+# SSC Synthetic
+clear
+load_ssc_synthetic;
+x_mode = 'time'; N = 1000; time_limit = 30; ssc_solvers;
+
+# sPCA Synthetic
+clear
+load_spca_synthetic;
+x_mode = 'iter'; N = 150; time_limit = 1000; spca_solvers;
+x_mode = 'time'; N = 10000; time_limit = 90; spca_solvers;
+
+exit
+exit

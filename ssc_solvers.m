@@ -236,7 +236,7 @@ fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_oadmm(iter_oadmm), iter_oadmm,
 fprintf('  nnz(Z)=%d/%d, ||X-Z||_F=%.2e\n', nnz(Z), numel(Z), norm(X-Z,'fro'));
 
 % ============================== PLOT ========================================
-x_mode = 'iter';
+% x_mode = 'iter';
 
 algs = {'NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM'};
 Tc = {T_adpmm(1:iter_adpmm), T_adpmm_svd(1:iter_adpmm_svd), ...

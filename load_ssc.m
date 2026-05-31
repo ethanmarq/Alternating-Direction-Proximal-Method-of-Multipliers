@@ -1,6 +1,6 @@
 % ============================== CONFIG ======================================
-dataset = 'mnist'
-p = 10; % Classes
+% dataset = 'mnist'
+% p = 10; % Classes
 % 10 Classes:
 % - usps
 % - mnist

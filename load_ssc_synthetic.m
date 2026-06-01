@@ -5,8 +5,8 @@
 
 % ============================== CONFIG ======================================
 dataset    = 'synthetic_blobs';
-n_per      = 100;     % points per cluster
-p          = 5;       % number of clusters / orthogonal columns
+n_per      = 1000;     % points per cluster
+p          = 10;       % number of clusters / orthogonal columns
 d          = 20;      % ambient dimension of the data points
 sep        = 5;       % cluster center scale (well-separated blobs)
 N          = 100;
@@ -39,7 +39,7 @@ fprintf('Lap: %dx%d, nnz=%d, density=%.2e\n', ...
     n, n, nnz(Lap), full(nnz(Lap)/n^2));
 
 % ============================== PARAMS ======================================
-mu  = 1 / sqrt(n);
+mu  = .5;
 F   = @(X) 0.5*trace(X'*(Lap*X)) + mu*sum(abs(X(:)));
 L   = full(eigs(Lap, 1));
 rho = 0.5 * L;

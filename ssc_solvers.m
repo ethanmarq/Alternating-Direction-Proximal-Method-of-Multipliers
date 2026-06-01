@@ -226,7 +226,7 @@ for k = 2:N
     Z = (Y/ogamma + Lambda + orho*X) / (1/ogamma + orho);
     % Lambda step
     Lambda = Lambda + sigma*orho*(X - Z);
-    orho = orho*(1+0.1*k^(1/3));
+    orho = min(orho*(1+0.1*k^(1/3)), 1e8*L);
     F_oadmm(k) = F(X);
     T_oadmm(k) = toc;
     if T_oadmm(k) >= time_limit, break; end
@@ -256,27 +256,56 @@ end
 Fstar = min(cellfun(@min, Fc));
 styles  = {'-',':','-',':',':','-','-'};   styles{2} = ':';
 
-figure('Visible','off'); hold on;
-h = gobjects(numel(Fc),1);
-order = [1 2 3 4 5 6 7];
-m = 1; % Show every mth point
+% figure('Visible','off'); hold on; grid on;
+% h = gobjects(numel(Fc),1);
+% order = [1 2 3 4 5 6 7];
+% m = 1; % Show every mth point
+% % for i = order
+% %     semilogy(Xc{i}, Fc{i} - Fstar, ...
+% %         'LineStyle', styles{i}, 'LineWidth', 2);
+% % end
 % for i = order
-%     semilogy(Xc{i}, Fc{i} - Fstar, ...
+%     h(i) = plot(Xc{i}(1:m:end), Fc{i}(1:m:end), ...
 %         'LineStyle', styles{i}, 'LineWidth', 2);
 % end
+% % set(gca,'YScale','log');
+% %ylim([1e-17, inf]);
+% % xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
+% ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
+% xlabel(xlbl); ylabel('F');
+% ds_disp = strrep(dataset,'_','\_');
+% % k = p: classes, lambda = mu; sparsity coefficient - to match paper
+% title(sprintf('SSC %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu));
+% drawnow % Need to save twice for legend to properly fit text
+% legend('NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM');
+% saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
+% legend('NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM');
+% saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
+% fprintf('Saved: png\n');
+
+figure('Visible','off'); hold on; grid on;
+set(gca, 'FontSize', 16);              % tick labels
+h = gobjects(numel(Fc),1);
+order = [1 2 3 4 5 6 7];
+m = 1;
+
 for i = order
     h(i) = plot(Xc{i}(1:m:end), Fc{i}(1:m:end), ...
-        'LineStyle', styles{i}, 'LineWidth', 2);
+        'LineStyle', styles{i}, 'LineWidth', 2.5);
 end
-% set(gca,'YScale','log');
-%ylim([1e-17, inf]);
-% xlabel(xlbl); ylabel('F - F^\ast'); %log plot labels
+
 ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
-xlabel(xlbl); ylabel('F');
+xlabel(xlbl, 'FontSize', 20);
+ylabel('F',  'FontSize', 20);
+
 ds_disp = strrep(dataset,'_','\_');
-% k = p: classes, lambda = mu; sparsity coefficient - to match paper
-title(sprintf('SSC %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu));
-lgd = legend(algs,'Location','northeast'); grid on;
-lgd.ItemTokenSize = [30, 18];
-saveas(gcf, sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag));
-fprintf('Saved: png\n');
+title(sprintf('SSC %s (n=%d, k=%d, \\lambda=%g)', ds_disp, n, p, mu), ...
+      'FontSize', 20);
+
+legend('NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM');
+
+fname = sprintf('ssc_%s_n%d_p%d_mu%.2f_subopt_%s.png', dataset, n, p, mu, xtag);
+exportgraphics(gcf, fname, 'Resolution', 300);
+legend('NS-ADPMM','SVD-ADPMM','ManPG','ManPG-Ada','RADMM','ARADMM','OADMM');
+exportgraphics(gcf, fname, 'Resolution', 300);
+fprintf('Saved: %s\n', fname);

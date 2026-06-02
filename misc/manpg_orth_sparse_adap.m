@@ -40,7 +40,8 @@ else
     AX = B'*(B*X);
 end
 
-F(1) = -sum(sum(X.*(AX)))+h(X);
+% F(1) = -sum(sum(X.*(AX)))+h(X);
+F(1) = -trace(X'*(AX)) + mu*sum(abs(X(:)));
 
 time_vec(1) = 0;
 num_inner = zeros(maxiter,1);
@@ -127,7 +128,8 @@ for iter = 2:maxiter
     end
 
     X = Z; AX = AZ;
-    F(iter) = F_trial;
+    % F(iter) = F_trial;
+    F(iter) = -trace(X'*(AX)) + mu*sum(abs(X(:)));
     time_vec(iter) = toc;
     if time_vec(iter) >= time_limit, break; end
 

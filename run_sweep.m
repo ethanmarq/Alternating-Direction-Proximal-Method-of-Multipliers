@@ -1,4 +1,5 @@
-load_h;
+dataset = 'news20';
+load_spca;
 N = 5000;
 time_limit = 360;
 %p_list = [100, 1000, 10000, 100000];

@@ -3,8 +3,8 @@ function [X_manpg, F_manpg,sparsity,time_manpg,iter,flag_succ,num_linesearch,mea
 %min -Tr(X'*B*X)+ mu*norm(X,1) s.t. X'*X=Ir. X \in R^{p*r}
 % mu can be a vector with weighted parameter
 %parameters
-
 tic;
+
 r = option.r;%number of col
 n = option.n;%dim
 mu = option.mu;
@@ -33,19 +33,15 @@ else
     L = 2*(svds(full(B),1))^2;
 end
 
-% if mu > L/2
-%     fprintf('Too large penalty parameter mu, trivial solution\n');
-%     X_manpg =
-%     return;
-% end
-
 if type == 1
     AX = B*X;
 else
     AX = B'*(B*X);
 end
 
-F(1) = -sum(sum(X.*(AX)))+h(X);
+
+% F(1) = -sum(sum(X.*(AX)))+h(X);
+F(1) = -trace(X'*(AX)) + mu*sum(abs(X(:)));
 time_vec(1) = 0;
 num_inner = zeros(maxiter,1);
 opt_sub = num_inner;
@@ -132,7 +128,9 @@ for iter = 2:maxiter
     end
 
     X = Z; AX = AZ;
-    F(iter) = F_trial;
+    % F(iter) = F_trial;
+    F(iter) = -trace(X'*(AX)) + mu*sum(abs(X(:)));
+
     time_vec(iter) = toc;
     if time_vec(iter) >= time_limit, break; end
 

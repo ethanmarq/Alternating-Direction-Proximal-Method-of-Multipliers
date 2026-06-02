@@ -1,7 +1,7 @@
 % ============================== CONFIG ======================================
 % dataset = 'rcv1_train'
 data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
-p   = 50;       % number of sparse components
+p   = 200;       % number of sparse components
 mu  = 0.10;     % l1 weight
 N   = 100;      % outer iterations
 seed = 0;

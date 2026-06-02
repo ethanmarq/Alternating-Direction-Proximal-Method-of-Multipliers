@@ -45,7 +45,7 @@ for k = 2:N
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm(k) = F(X);
+    F_adpmm(k) = F(Z);
     T_adpmm(k) = toc;
     if T_adpmm(k) >= time_limit, break; end
 end
@@ -68,7 +68,7 @@ for k = 2:N
     Z = sign(V) .* max(abs(V) - mu/rho, 0);
     % Dual update
     Y = Y + rho*(X - Z);
-    F_adpmm_svd(k) = F(X);
+    F_adpmm_svd(k) = F(Z);
     T_adpmm_svd(k) = toc;
     if T_adpmm_svd(k) >= time_limit, break; end
 end
@@ -140,71 +140,12 @@ for k = 2:N
     Z = (Yk/gamma + Lambda + rho*X) / (1/gamma + rho);
     % Dual step
     Lambda = Lambda + rho*(X - Z);
-    F_radmm(k) = F(X);
+    F_radmm(k) = F(Z);
     T_radmm(k) = toc;
     if T_radmm(k) >= time_limit, break; end
 end
 iter_radmm = k;
 fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_radmm(iter_radmm), iter_radmm, F_radmm(iter_radmm));
-
-% ============================== SOC =========================================
-%fprintf('SOC...\n');
-%X = X0; Y = X0;
-%Lambda = zeros(size(X));
-%F_soc = zeros(1, N); F_soc(1) = F(X);
-%T_soc = zeros(1, N); T_soc(1) = 0;
-%tic
-%for k = 2:N
-%    temp_F = @(X) -0.5*trace(X.'*H*X) + mu*sum(sum(abs(X))) + rho / 2 * norm(X - Y + Lambda, 'fro')^2;
-%    % X step, proximal gradient method to
-%    % solve f + g + quadratic term
-%    for i = 1:100
-%        grad_f = -H*X + rho * (X - Y + Lambda);
-%        grad_map = (X - wthresh(X - eta*grad_f, 's', mu * eta)) / eta;
-%        if norm(grad_map, 'fro') < 1e-8
-%            break;
-%        end
-%        X = X - eta * grad_map;
-%    end
-%    % Y step: a projection step
-%    [U,~,V] = svd(X + Lambda);
-%    Y = U*eye(n,p)*V.';
-%    % Lambda step
-%    Lambda = Lambda + (X - Y);
-%    F_soc(k) = F(Y);
-%    T_soc(k) = toc;
-%    if abs(F_soc(k) - F_soc(k-1)) <= 1e-8, break; end
-%end
-%iter_soc = k;
-%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_soc(iter_soc), iter_soc, F_soc(iter_soc));
-
-% ============================== MADMM =======================================
-%fprintf('MADMM...\n');
-%X = X0; Y = X0;
-%Lambda = zeros(size(X));
-%F_madmm = zeros(1, N); F_madmm(1) = F(X);
-%T_madmm = zeros(1, N); T_madmm(1) = 0;
-%tic
-%for k = 2:N
-%    % X step: a Riemannian gradient step
-%    for i = 1:100
-%        gx = -H*X + rho*(X - Y + Lambda);
-%        rgx = proj(X, gx);
-%        if norm(rgx, 'fro') < 1e-8
-%            break;
-%        end
-%        X = retr(X, -eta*rgx);
-%    end
-%    % Y step
-%    Y = wthresh(X + Lambda ,'s', mu/rho);
-%    % Lambda step
-%    Lambda = Lambda + (X - Y);
-%    F_madmm(k) = F(X);
-%    T_madmm(k) = toc;
-%    if abs(F_madmm(k) - F_madmm(k-1)) <= 1e-8, break; end
-%end
-%iter_madmm = k;
-%fprintf('  done in %.1fs at iter %d, F=%.4e\n', T_madmm(iter_madmm), iter_madmm, F_madmm(iter_madmm));
 
 % ============================== ARADMM ======================================
 fprintf('ARADMM...\n');

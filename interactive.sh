@@ -51,13 +51,13 @@ x_mode = 'iter'; N = 40; time_limit = 1000; spca_solvers;
 exit
 exit
 
-# Testing new manPG saving
+# Testing Scaling Plots
 salloc --nodes=1 --mem=256gb --cpus-per-task=64 --time=12:00:00
 module load matlab
 matlab -nodisplay
 clear
 dataset = 'news20';
 load_spca;
-x_mode = 'time'; N = 10000; time_limit = 90; mu = 50; spca_solvers;
+x_mode = 'time'; N = 5; time_limit = 90; mu = 50; spca_solvers;
 exit
 exit

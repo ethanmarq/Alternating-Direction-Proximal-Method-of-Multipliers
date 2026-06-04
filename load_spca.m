@@ -1,11 +1,11 @@
 % ============================== CONFIG ======================================
-% dataset = 'rcv1_train'
+% dataset = 'rcv1_train' # 'news20'
 data_path = sprintf('/scratch/marque6/libsvm_data/%s.mat', dataset);
 p   = 200;       % number of sparse components
 mu  = 0.10;     % l1 weight
 N   = 100;      % outer iterations
 seed = 0;
-time_limit = 60;
+time_limit = 10;
 x_mode = 'iter';   % 'iter' or 'time'
 
 % ============================== LOAD ========================================

@@ -45,7 +45,7 @@ for i = 1:M
 end
 ylim([Fstar - 5, max(cellfun(@max, Fc)) + 5]);
 xlabel(xlbl, 'FontSize', 20); ylabel('Objective', 'FontSize', 20);
-title(sprintf('Objective vs %s - %s (n=%d, k=%d, \\lambda=%g)', ...
+title(sprintf('sPCA ADPMM Polar Orthogonalization Methods', ...
     xname, strrep(dataset, '_', '\_'), m, p, mu), 'FontSize', 18);
 fname = sprintf('adpmm_orth_%s_n%d_p%d_mu%.2f_%s.png', dataset, m, p, mu, xtag);
 legend(algs, 'Location', 'northeast');
@@ -106,12 +106,16 @@ end
 %     if tr, W = W'; end
 % end
 function W = orth_ns(B)
-    c = 0.4; a = 1.5 + c; b = -0.5 - 2*c;
+    % c = 0.4; a = 1.5 + c; b = -0.5 - 2*c;
+    % a = 3.4445; b = -4.775; c = 2.0315;
+    % a = 3; b = -0.5*a; c = 1 - a + 0.5*a;
+    % a = 1.876; b = -1.2510; c = 0.376;
+    a = 2.438; b = -2.375; c = 0.938;
     tr = size(B,1) > size(B,2); if tr, B = B'; end
     W = B / (norm(B,2) + 1e-12);
-    for j = 1:50
+    for j = 1:1
         A = W*W';
-        if norm(A - eye(size(A)),'fro') < 1e-12, break; end
+        % if norm(A - eye(size(A)),'fro') < 1e-12, break; end
         W = a*W + (b*A + c*A*A)*W;
     end
     if tr, W = W'; end

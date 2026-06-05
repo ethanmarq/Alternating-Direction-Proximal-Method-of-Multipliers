@@ -6,10 +6,10 @@
 
 % ============================== CONFIG ======================================
 dataset    = 'synthetic_spike';
-n          = 30000;     % ambient dimension (# variables)  -> H is n x n
-p          = 50;       % number of sparse components to extract
-k_true     = 50;       % number of planted spikes (true components)
-m          = 80000;     % number of samples
+n          = 8000;     % ambient dimension (# variables)  -> H is n x n
+p          = 500;       % number of sparse components to extract
+k_true     = 500;       % number of planted spikes (true components)
+m          = 16000;     % number of samples
 s          = 10;      % support size (nonzeros) per planted loading
 spike      = 20;      % leading signal strength (variance along components)
 noise      = 1;       % isotropic noise std

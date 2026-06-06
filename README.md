@@ -1,4 +1,7 @@
 # Interactive Matlab on Slurm
+## Dependencies
+- Matlab
+
 ## Results
 Figures in detail under ./paper_figures/
 

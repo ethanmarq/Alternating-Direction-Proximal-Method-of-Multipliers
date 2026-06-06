@@ -1,6 +1,6 @@
 # Interactive Matlab on Slurm
 ## Dependencies
-- Matlab
+- Matlab R2025b
 
 ## Results
 Figures in detail under ./paper_figures/

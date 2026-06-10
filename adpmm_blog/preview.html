@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Ethan Marquez" />
+  <meta name="dcterms.date" content="2026-06-09" />
+  <title>Sparse Orthogonality-Constrained Optimization via an Alternating Direction Proximal Method of Multipliers</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Sparse Orthogonality-Constrained Optimization via an
+Alternating Direction Proximal Method of Multipliers</h1>
+<p class="author">Ethan Marquez</p>
+<p class="date">2026-06-09</p>
+</header>
+<p>Optimization problems with orthogonality constraints arise throughout
+machine learning, including dimensionality reduction, clustering, and
+representation learning. These problems require the variable to lie on
+the <em>Stiefel manifold</em>, the set of matrices with orthonormal
+columns. While orthogonality improves interpretability and numerical
+stability, it also makes the feasible set nonconvex, and things get
+harder still when the objective contains a non-smooth sparsity-inducing
+term.</p>
+<p><span class="math display">\[
+\newcommand{\xm}{\mathbf{X}}
+\newcommand{\am}{\mathbf{A}}
+\newcommand{\bm}{\mathbf{B}}
+\newcommand{\lm}{\mathbf{L}}
+\newcommand{\hm}{\mathbf{H}}
+\newcommand{\mm}{\mathbf{M}}
+\newcommand{\gm}{\mathbf{G}}
+\newcommand{\qm}{\mathbf{Q}}
+\newcommand{\pm}{\mathbf{P}}
+\newcommand{\um}{\mathbf{U}}
+\newcommand{\vm}{\mathbf{V}}
+\newcommand{\ym}{\mathbf{Y}}
+\newcommand{\zm}{\mathbf{Z}}
+\newcommand{\im}{\mathbf{I}}
+\newcommand{\fm}{\mathbf{F}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vy}{\mathbf{y}}
+\newcommand{\vz}{\mathbf{z}}
+\newcommand{\vc}{\mathbf{c}}
+\newcommand{\vb}{\mathbf{b}}
+\newcommand{\vu}{\mathbf{u}}
+\newcommand{\vt}{\mathbf{t}}
+\newcommand{\vg}{\mathbf{g}}
+\newcommand{\vw}{\mathbf{w}}
+\newcommand{\trace}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\inner}[2]{\left\langle #1,#2 \right\rangle}
+\newcommand{\pos}[1]{\left[#1\right]_+}
+\]</span></p>
+<p>A prominent example is <em>sparse principal component analysis</em>
+(sparse PCA), which enhances interpretability by enforcing sparsity on
+the principal components while keeping them orthogonal:</p>
+<p><span class="math display">\[
+\min_{\xm}\; -\frac{1}{2}\trace(\xm^\top \am^\top\am
+\xm)+\lambda\norm{\xm}_1
+\quad\text{s.t.}\quad \xm^\top\xm=\im,
+\]</span></p>
+<p>where <span class="math inline">\(\am\)</span> is the data matrix
+(each row a sample), <span class="math inline">\(\xm\)</span> collects
+the principal components, and <span
+class="math inline">\(\lambda\)</span> controls the sparsity level.
+Similarly, <em>Sparse Spectral Clustering</em> (SSC) injects sparsity
+into spectral embeddings to improve robustness and interpretability in
+graph-based learning:</p>
+<p><span class="math display">\[
+\min_{\xm}\; \frac{1}{2}\trace(\xm^\top \lm \xm)+\lambda\norm{\xm}_1
+\quad\text{s.t.}\quad \xm^\top\xm=\im,
+\]</span></p>
+<p>where <span class="math inline">\(\lm\)</span> is a graph Laplacian.
+The same template covers many more models: <strong>unsupervised feature
+selection</strong> replaces the <span
+class="math inline">\(\ell_1\)</span> norm with the
+row-sparsity-promoting <span class="math inline">\(\ell_{2,1}\)</span>
+norm, and <strong>compressed modes in physics</strong> seeks spatially
+localized solutions of the independent-particle Schrödinger equation by
+taking the quadratic term to be a discretized Schrödinger operator <span
+class="math inline">\(\hm\)</span>. In every case the difficulty is the
+same: a <strong>non-smooth sparsity term sitting on top of a nonconvex
+orthogonality constraint</strong>.</p>
+<p>Existing solvers largely fall into two camps. <em>Riemannian</em>
+methods (ManPG, ManPG-Ada, RADMM, ARADMM, OADMM) operate directly on the
+Stiefel manifold and preserve feasibility via retractions or
+projections, but they typically need repeated manifold operations or
+per-iteration line searches, which become expensive at scale.
+<em>Relaxation or splitting</em> methods decouple sparsity from
+orthogonality, but may sacrifice feasibility or introduce approximation
+error (e.g., Moreau-envelope smoothing of the regularizer). In this blog
+we discuss an algorithm which employs the former: an <strong>Alternating
+Direction Proximal Method of Multipliers (ADPMM)</strong> that handles
+the orthogonality constraint <em>without relaxation</em>, and whose
+per-iteration work reduces to one Stiefel projection plus one
+element-wise soft-thresholding.</p>
+<h2 id="from-admm-to-adpmm">From ADMM to ADPMM</h2>
+<p>Recall the classical Alternating Direction Method of Multipliers
+(ADMM). For a separable problem</p>
+<p><span class="math display">\[
+\min_{\vx,\vz}\; H(\vx,\vz)=h_1(\vx)+h_2(\vz)
+\quad\text{s.t.}\quad \am\vx+\bm\vz=\vc,
+\]</span></p>
+<p>ADMM works on the augmented Lagrangian with dual variable <span
+class="math inline">\(\vy\)</span> and penalty <span
+class="math inline">\(\rho&gt;0\)</span>:</p>
+<p><span class="math display">\[
+L_\rho(\vx,\vz,\vy)=h_1(\vx)+h_2(\vz)+\vy^\top(\am\vx+\bm\vz-\vc)+\frac{\rho}{2}\norm{\am\vx+\bm\vz-\vc}^2,
+\]</span></p>
+<p>alternating a minimization over <span
+class="math inline">\(\vx\)</span>, a minimization over <span
+class="math inline">\(\vz\)</span>, and a dual ascent step on <span
+class="math inline">\(\vy\)</span>. ADMM is simple and effective, but
+its performance can deteriorate when the subproblems are ill-conditioned
+or lack strong convexity; as we will see, the plain <span
+class="math inline">\(\vx\)</span>-subproblem for sparse PCA is
+<em>not</em> something we can solve in closed form.</p>
+<p>ADPMM fixes this by adding a quadratic <strong>proximal term</strong>
+to each primal update. For two positive semidefinite matrices <span
+class="math inline">\(\gm\)</span> and <span
+class="math inline">\(\qm\)</span>, with <span
+class="math inline">\(\norm{\vx}_\gm^2=\vx^\top\gm\vx\)</span>:</p>
+<p><strong>Algorithm 1 (ADPMM).</strong></p>
+<p><strong>Input:</strong> initial <span
+class="math inline">\(\vx,\vy,\vz\)</span>; penalty <span
+class="math inline">\(\rho\)</span>; proximal matrices <span
+class="math inline">\(\gm,\qm\)</span>.</p>
+<ol type="1">
+<li><p>For <span class="math inline">\(k=0,1,2,\ldots\)</span>:</p>
+<ol type="1">
+<li><p><span
+class="math display">\[\vx^{k+1}\in\arg\min_\vx\Big\{h_1(\vx)+\frac{\rho}{2}\norm{\am\vx+\bm\vz^k-\vc+\tfrac{1}{\rho}\vy^k}^2+\frac{1}{2}\norm{\vx-\vx^k}_\gm^2\Big\}\]</span></p></li>
+<li><p><span
+class="math display">\[\vz^{k+1}\in\arg\min_\vz\Big\{h_2(\vz)+\frac{\rho}{2}\norm{\am\vx^{k+1}+\bm\vz-\vc+\tfrac{1}{\rho}\vy^k}^2+\frac{1}{2}\norm{\vz-\vz^k}_\qm^2\Big\}\]</span></p></li>
+<li><p><span
+class="math display">\[\vy^{k+1}=\vy^k+\rho(\am\vx^{k+1}+\bm\vz^{k+1}-\vc)\]</span></p></li>
+</ol></li>
+</ol>
+<p>When <span class="math inline">\(\gm=\qm=\mathbf{0}\)</span>, ADPMM
+degenerates to vanilla ADMM. The proximal terms play two roles: they
+<strong>stabilize</strong> the updates by penalizing large deviations
+from the previous iterate, and they can be chosen to <strong>cancel
+inconvenient quadratic terms</strong> in the objective, turning an
+otherwise hard subproblem into a closed-form one.</p>
+<h2 id="solving-sparse-pca-and-ssc-via-adpmm">Solving Sparse PCA and SSC
+via ADPMM</h2>
+<p>To put sparse PCA into the ADPMM template, introduce an auxiliary
+variable <span class="math inline">\(\zm\)</span> that carries the
+sparsity term, leaving the orthogonality constraint on <span
+class="math inline">\(\xm\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\min_{\xm,\zm}\quad &amp;
+-\frac{1}{2}\trace(\xm^\top\am^\top\am\xm)+\lambda\norm{\zm}_1\\
+\text{s.t.}\quad &amp; \xm^\top\xm=\im,\qquad \xm=\zm.
+\end{aligned}
+\]</span></p>
+<p>Now design the proximal matrices. In the <span
+class="math inline">\(\xm\)</span>-update, the objective contributes the
+concave quadratic <span
+class="math inline">\(-\frac{1}{2}\trace(\xm^\top\am^\top\am\xm)\)</span>.
+Choosing</p>
+<p><span class="math display">\[
+\gm=\am^\top\am
+\]</span></p>
+<p><strong>exactly cancels this quadratic</strong>: the proximal term
+<span class="math inline">\(\frac{1}{2}\norm{\xm-\xm^k}_\gm^2\)</span>
+expands to <span
+class="math inline">\(\frac{1}{2}\trace(\xm^\top\am^\top\am\xm)\)</span>
+plus terms linear in <span class="math inline">\(\xm\)</span>. What
+remains of the <span class="math inline">\(\xm\)</span>-subproblem is a
+linear function of <span class="math inline">\(\xm\)</span> plus <span
+class="math inline">\(\frac{\rho}{2}\norm{\xm-\zm^k+\tfrac{1}{\rho}\ym^k}_F^2\)</span>,
+restricted to the Stiefel manifold; this is the <strong>Orthogonal
+Procrustes problem</strong>, solved in closed form by the SVD:</p>
+<p><span class="math display">\[
+\xm^{k+1}=\um\vm^\top,
+\qquad
+\um\Sigma\vm^\top=\operatorname{svd}\big(\rho\zm^k-\ym^k+\gm\xm^k\big).
+\]</span></p>
+<p>Since the <span class="math inline">\(\zm\)</span>-update has no
+quadratic term, we simply take <span
+class="math inline">\(\qm=\mathbf{0}\)</span>, and the update reduces to
+element-wise <strong>soft-thresholding</strong>:</p>
+<p><span class="math display">\[
+\zm^{k+1}=\mathcal{S}_{\lambda/\rho}\Big(\xm^{k+1}+\tfrac{1}{\rho}\ym^k\Big),
+\qquad
+\mathcal{S}_{\tau}(\xm)=\sign(\xm)\odot\max(|\xm|-\tau,0).
+\]</span></p>
+<p><strong>Algorithm 2 (ADPMM for Sparse PCA).</strong></p>
+<p><strong>Input:</strong> initial <span
+class="math inline">\(\xm,\ym,\zm\)</span>; penalty <span
+class="math inline">\(\rho\)</span>; data matrix <span
+class="math inline">\(\am\)</span>. Set <span
+class="math inline">\(\gm=\am^\top\am\)</span>.</p>
+<ol type="1">
+<li><p>For <span class="math inline">\(k=0,1,2,\ldots\)</span>:</p>
+<ol type="1">
+<li><p>Compute <span
+class="math inline">\(\operatorname{svd}(\rho\zm^k-\ym^k+\gm\xm^k)=\um\Sigma\vm^\top\)</span>.</p></li>
+<li><p><span class="math display">\[\xm^{k+1}=\um\vm^\top \quad
+(\text{or via the Newton–Schulz iteration of Algorithm
+3})\]</span></p></li>
+<li><p><span
+class="math display">\[\zm^{k+1}=\mathcal{S}_{\lambda/\rho}\big(\xm^{k+1}+\tfrac{1}{\rho}\ym^k\big)\]</span></p></li>
+<li><p><span
+class="math display">\[\ym^{k+1}=\ym^k+\rho(\xm^{k+1}-\zm^{k+1})\]</span></p></li>
+</ol></li>
+</ol>
+<p>The Sparse Spectral Clustering case is identical except that the
+quadratic is <span
+class="math inline">\(+\frac{1}{2}\trace(\xm^\top\lm\xm)\)</span>, a
+<em>convex</em> term we cancel with</p>
+<p><span class="math display">\[
+\gm=\lambda_{\max}(\lm)\,\im-\lm,
+\]</span></p>
+<p>where the shift by <span
+class="math inline">\(\lambda_{\max}(\lm)\)</span> ensures <span
+class="math inline">\(\gm\succeq 0\)</span> so the proximal term is a
+valid Bregman-like penalty. Every other line of the algorithm is
+unchanged. Thus, <strong>one framework, two problems</strong>; with the
+obvious substitutions, the unsupervised feature selection and
+compressed-modes models as well (for the <span
+class="math inline">\(\ell_{2,1}\)</span> norm, soft-thresholding is
+replaced by its row-wise group analogue).</p>
+<p>Each iteration therefore costs one matrix multiplication, one
+orthogonalization, and one entrywise shrinkage. <strong>No retractions,
+no line searches, no smoothing of the regularizer</strong>.</p>
+<h2 id="convergence-analysis">Convergence Analysis</h2>
+<p>When <span class="math inline">\(h_1\)</span> and <span
+class="math inline">\(h_2\)</span> are proper, closed and convex and the
+proximal matrices make the subproblems strongly convex (our Hypothesis
+1), ADPMM enjoys an ergodic <span
+class="math inline">\(\mathcal{O}(1/n)\)</span> rate in both objective
+gap and feasibility violation.</p>
+<p><strong>Theorem 1.</strong> Let <span
+class="math inline">\(\{(\vx^k,\vz^k)\}\)</span> be generated by
+Algorithm 2 (or its SSC variant), let <span
+class="math inline">\((\vx^*,\vz^*)\)</span> be an optimal primal
+solution and <span class="math inline">\(\vy^*\)</span> an optimal dual
+solution. Then, under Hypothesis 1, for any <span
+class="math inline">\(\gamma&gt;2\norm{\vy^*}\)</span> and <span
+class="math inline">\(n\ge 0\)</span>:</p>
+<p><span class="math display">\[
+H(\vx^{(n)},\vz^{(n)})-H(\vx^*,\vz^*)
+\le
+\frac{\norm{\vx^*-\vx^0}_\gm^2+\norm{\vz^*-\vz^0}_{\rho\im}^2+\frac{1}{\rho}(\gamma+\norm{\vy^0})^2}{2(n+1)},
+\]</span></p>
+<p><span class="math display">\[
+\norm{\vx^{(n)}-\vz^{(n)}}
+\le
+\frac{\norm{\vx^*-\vx^0}_\gm^2+\norm{\vz^*-\vz^0}_{\rho\im}^2+\frac{1}{\rho}(\gamma+\norm{\vy^0})^2}{\gamma(n+1)},
+\]</span></p>
+<p>where <span
+class="math inline">\(\vx^{(n)}=\frac{1}{n+1}\sum_{k=0}^n\vx^k\)</span>
+and <span
+class="math inline">\(\vz^{(n)}=\frac{1}{n+1}\sum_{k=0}^n\vz^k\)</span>
+are the ergodic averages.</p>
+<p>The proof leans on the following classical “certificate” result [1],
+which converts an approximate saddle-point bound into separate bounds on
+suboptimality and infeasibility.</p>
+<p><strong>Theorem 2.</strong> Let <span
+class="math inline">\(f_{\mathrm{opt}}\)</span> be the optimal value of
+a convex problem <span
+class="math inline">\(\min_\vx\{f(\vx):g_i(\vx)\le
+0,\;\am\vx+\vb=0\}\)</span> for which strong duality holds with optimal
+dual solution <span class="math inline">\((\vy^*,\vz^*)\)</span>. If for
+some <span class="math inline">\(\delta&gt;\norm{\vy^*}\)</span>, <span
+class="math inline">\(\rho_1\ge 2\norm{\vy^*}_2\)</span>, <span
+class="math inline">\(\rho_2\ge 2\norm{\vz^*}_2\)</span> a point <span
+class="math inline">\(\tilde\vx\)</span> satisfies</p>
+<p><span class="math display">\[
+f(\tilde\vx)-f_{\mathrm{opt}}+\rho_1\norm{\pos{\vg(\tilde\vx)}}_2+\rho_2\norm{\am\tilde\vx+\vb}_2\le\delta,
+\]</span></p>
+<p>then</p>
+<p><span class="math display">\[
+f(\tilde\vx)-f_{\mathrm{opt}}\le\delta,
+\qquad
+\norm{\pos{\vg(\tilde\vx)}}_2\le\frac{2}{\rho_1}\delta,
+\qquad
+\norm{\am\tilde\vx+\vb}_2\le\frac{2}{\rho_2}\delta.
+\]</span></p>
+<hr />
+<p><strong>Proof.</strong> The first bound is immediate from the
+non-negativity of the last two terms on the left-hand side. For the
+others, define the perturbation function</p>
+<p><span class="math display">\[
+v(\vu,\vt)=\min_{\vx}\{f(\vx):\vg(\vx)\le\vu,\;\am\vx+\vb=\vt\}.
+\]</span></p>
+<p>Optimality of the dual pair gives <span
+class="math inline">\((-\vy^*,-\vz^*)\in\partial v(0,0)\)</span>,
+hence</p>
+<p><span class="math display">\[
+v(\vu,\vt)-v(0,0)\ge\inner{-\vy^*}{\vu}+\inner{-\vz^*}{\vt}.
+\]</span></p>
+<p>Define <span
+class="math inline">\(\tilde\vu=\pos{\vg(\tilde\vx)}\)</span> and <span
+class="math inline">\(\tilde\vt=\am\tilde\vx+\vb\)</span>. Then</p>
+<p><span class="math display">\[
+\begin{aligned}
+(\rho_1-\norm{\vy^*}_2)\norm{\tilde\vu}_2+(\rho_2-\norm{\vz^*}_2)\norm{\tilde\vt}_2
+&amp;\le
+\inner{-\vy^*}{\tilde\vu}+\inner{-\vz^*}{\tilde\vt}+\rho_1\norm{\tilde\vu}_2+\rho_2\norm{\tilde\vt}_2\\
+&amp;\le
+v(\tilde\vu,\tilde\vt)-v(0,0)+\rho_1\norm{\tilde\vu}_2+\rho_2\norm{\tilde\vt}_2\\
+&amp;\le
+f(\tilde\vx)-f_{\mathrm{opt}}+\rho_1\norm{\tilde\vu}_2+\rho_2\norm{\tilde\vt}_2\le\delta.
+\end{aligned}
+\]</span></p>
+<p>Both summands on the left are non-negative, so each is at most <span
+class="math inline">\(\delta\)</span>, and since <span
+class="math inline">\(\rho_1-\norm{\vy^*}_2\ge\rho_1/2\)</span> and
+<span class="math inline">\(\rho_2-\norm{\vz^*}_2\ge\rho_2/2\)</span> we
+conclude <span
+class="math inline">\(\norm{\tilde\vu}_2\le\frac{2}{\rho_1}\delta\)</span>
+and <span
+class="math inline">\(\norm{\tilde\vt}_2\le\frac{2}{\rho_2}\delta\)</span>.</p>
+<hr />
+<p>With Theorem 2 in hand, the proof of Theorem 1 proceeds in four
+steps. <strong>(i)</strong> Fermat’s optimality conditions for the two
+subproblems yield subgradient inequalities at <span
+class="math inline">\(\vx^{k+1}\)</span> and <span
+class="math inline">\(\vz^{k+1}\)</span>, the first carrying the extra
+proximal term <span class="math inline">\(\gm(\vx^{k+1}-\vx^k)\)</span>.
+<strong>(ii)</strong> Adding them and applying, to each inner product,
+the three-point identity</p>
+<p><span class="math display">\[
+(\mathbf{a}-\mathbf{b})^\top\mathbf{P}(\mathbf{c}-\mathbf{d})
+=\frac{1}{2}\big(\norm{\mathbf{a}-\mathbf{d}}_{\mathbf{P}}^2-\norm{\mathbf{a}-\mathbf{c}}_{\mathbf{P}}^2+\norm{\mathbf{b}-\mathbf{c}}_{\mathbf{P}}^2-\norm{\mathbf{b}-\mathbf{d}}_{\mathbf{P}}^2\big)
+\]</span></p>
+<p>for <span
+class="math inline">\(\mathbf{P}\in\{\gm,\rho\im,\frac{1}{\rho}\im\}\)</span>
+produces a single inequality of the form</p>
+<p><span class="math display">\[
+H(\vx,\vz)-H(\vx^{k+1},\vz^{k+1})+\inner{\vw-\tilde\vw^k}{\fm\vw}
+\ge
+\frac{1}{2}\norm{\vw-\vw^{k+1}}_{\hm}^2-\frac{1}{2}\norm{\vw-\vw^k}_{\hm}^2,
+\]</span></p>
+<p>where <span class="math inline">\(\vw=(\vx,\vz,\vy)\)</span>, <span
+class="math inline">\(\hm=\diag(\gm,\rho\im,\frac{1}{\rho}\im)\)</span>,
+and <span class="math inline">\(\fm\)</span> is a
+<strong>skew-symmetric</strong> matrix. Skew-symmetry is what lets us
+swap <span class="math inline">\(\fm\tilde\vw^k\)</span> for <span
+class="math inline">\(\fm\vw\)</span> at no cost. <strong>(iii)</strong>
+Telescoping over <span class="math inline">\(k=0,\ldots,n\)</span> and
+invoking convexity of <span class="math inline">\(H\)</span> at the
+ergodic averages gives a bound that shrinks like <span
+class="math inline">\(\frac{1}{2(n+1)}\norm{\vw-\vw^0}_{\hm}^2\)</span>.
+<strong>(iv)</strong> Plugging in <span
+class="math inline">\((\vx^*,\vz^*)\)</span>, maximizing the dual
+variable over a ball of radius <span
+class="math inline">\(\gamma&gt;2\norm{\vy^*}\)</span>, and applying
+Theorem 2 splits the resulting bound into the two inequalities of
+Theorem 1.</p>
+<p>A remark is in order: the <em>original</em> problems are nonconvex
+because of the Stiefel constraint, so Theorem 1 should be read as the
+guarantee inherited by the splitting under Hypothesis 1; recent
+global-convergence results for nonconvex ADMM provide partial
+justification for the full nonconvex setting, and empirically the
+iterates converge stably in all our experiments.</p>
+<h2 id="alternatives-to-svd-a-newtonschulz-projection">Alternatives to
+SVD: a Newton–Schulz Projection</h2>
+<p>The SVD in the <span class="math inline">\(\xm\)</span>-update is
+exact but costs <span class="math inline">\(\mathcal{O}(n^3)\)</span>
+for an <span class="math inline">\(n\times n\)</span> input, which
+dominates the per-iteration time at scale. Any orthogonalization that
+maps <span class="math inline">\(\pm\mapsto\um\vm^\top\)</span> will do,
+and cheaper iterative candidates abound: QR, Modified Gram–Schmidt,
+polar decomposition, and the <strong>Newton–Schulz iteration</strong>,
+which uses only matrix multiplications and is therefore extremely fast
+on modern hardware.</p>
+<p><strong>Algorithm 3 (Newton–Schulz orthogonalization).</strong></p>
+<p><strong>Input:</strong> <span
+class="math inline">\(\pm=\rho\zm^k-\ym^k+\gm\xm^k\in\mathbb{R}^{n\times
+p}\)</span>; small <span class="math inline">\(\varepsilon\)</span>;
+coefficients <span class="math inline">\(a=1.9\)</span>, <span
+class="math inline">\(b=-1.3\)</span>, <span
+class="math inline">\(c=0.4\)</span>.</p>
+<ol type="1">
+<li><p>If <span class="math inline">\(n&gt;p\)</span>, transpose: <span
+class="math inline">\(\pm\leftarrow\pm^\top\)</span> (iterate on the
+wider orientation).</p></li>
+<li><p>Normalize: <span
+class="math inline">\(\qm\leftarrow\pm/(\norm{\pm}_F+\varepsilon)\)</span>.</p></li>
+<li><p>For <span class="math inline">\(t=1,\ldots,5\)</span>:</p>
+<p><span class="math display">\[\am\leftarrow\qm\qm^\top,\qquad
+\bm\leftarrow b\am+c\am^2,\qquad \qm\leftarrow
+a\qm+\bm\qm.\]</span></p></li>
+<li><p>Transpose back if needed. <strong>Output:</strong> <span
+class="math inline">\(\xm^{k+1}=\qm\)</span>.</p></li>
+</ol>
+<p>Why does this work, and where do <span
+class="math inline">\((a,b,c)\)</span> come from? Each inner step
+applies the odd quintic</p>
+<p><span class="math display">\[
+\qm_{t+1}=a\qm_t+b\qm_t(\qm_t^\top\qm_t)+c\qm_t(\qm_t^\top\qm_t)^2,
+\]</span></p>
+<p>which, writing <span
+class="math inline">\(\qm_t=\um\Sigma_t\vm^\top\)</span>, acts
+<strong>only on the singular values</strong>:</p>
+<p><span class="math display">\[
+\Sigma\mapsto p(\Sigma),\qquad p(\sigma)=a\sigma+b\sigma^3+c\sigma^5,
+\]</span></p>
+<p>while <span class="math inline">\(\um,\vm\)</span> stay fixed.
+Driving <span class="math inline">\(\qm\to\um\vm^\top\)</span> is
+exactly driving every singular value to <span
+class="math inline">\(1\)</span>, i.e., making <span
+class="math inline">\(\sigma=1\)</span> an <strong>attracting fixed
+point</strong> of <span class="math inline">\(p\)</span>. We therefore
+impose</p>
+<p><span class="math display">\[
+p(1)=a+b+c=1,
+\qquad
+p&#39;(1)=a+3b+5c=0,
+\]</span></p>
+<p>where the first condition makes <span
+class="math inline">\(\sigma=1\)</span> a fixed point and the second
+makes it <em>superattracting</em>. Two linear conditions leave one
+degree of freedom; solving for <span class="math inline">\(a,b\)</span>
+in terms of <span class="math inline">\(c\)</span>:</p>
+<p><span class="math display">\[
+a=\tfrac{3}{2}+c,\qquad b=-\tfrac{1}{2}-2c.
+\]</span></p>
+<p>Since <span class="math inline">\(p&#39;(1)=0\)</span>, a Taylor
+expansion gives <span
+class="math inline">\(p(1+\delta)=1+\tfrac{1}{2}p&#39;&#39;(1)\delta^2+\mathcal{O}(\delta^3)\)</span>,
+so singular values near <span class="math inline">\(1\)</span> converge
+<strong>quadratically</strong>. The Frobenius normalization in Step 2
+places all singular values in <span
+class="math inline">\([0,1]\)</span>, where <span
+class="math inline">\(\sigma=0\)</span> is repelling because <span
+class="math inline">\(p&#39;(0)=a&gt;1\)</span>; the iteration amplifies
+small singular values and locks large ones onto <span
+class="math inline">\(1\)</span>. We use <span
+class="math inline">\(c=0.4\)</span>, giving <span
+class="math inline">\((a,b,c)=(1.9,-1.3,0.4)\)</span>; the remaining
+freedom in <span class="math inline">\(c\)</span> trades off how
+aggressively small singular values are amplified against overshoot near
+<span class="math inline">\(\sigma=1\)</span>.</p>
+<p>It is worth contrasting this with the widely used
+<strong>Muon</strong> coefficients from the deep-learning optimizer
+literature: those are tuned only to push singular values into a
+<em>band</em> around <span class="math inline">\(1\)</span> within a
+fixed iteration budget and deliberately violate <span
+class="math inline">\(p&#39;(1)=0\)</span>. Our solver must satisfy
+<span class="math inline">\(\xm^\top\xm=\im\)</span> <em>exactly</em>,
+so we instead enforce an exact superattracting fixed point at <span
+class="math inline">\(\sigma=1\)</span>. With this choice, <span
+class="math inline">\(\norm{\xm^\top\xm-\im}_F\)</span> reached machine
+precision within the five inner iterations in all experiments.
+<strong>NS-ADPMM matches the SVD variant’s constraint accuracy at a
+fraction of the cost</strong>.</p>
+<figure style="text-align:center;">
+<img 
+    src="polar_orthogonal_methods.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Comparison of SVD vs alternative orthogonalization methods inside ADPMM"
+  />
+<figcaption>
+<em> <strong>Figure 1:</strong> Comparison of SVD vs alternative
+orthogonalization methods (QR, MGS, polar, Newton–Schulz) inside ADPMM.
+Vanilla SVD is accurate but takes more time. </em>
+</figcaption>
+</figure>
+<h2 id="experimental-results">Experimental Results</h2>
+<p>We evaluate two instances of the framework:
+<strong>SVD-ADPMM</strong> (exact Stiefel projection) and
+<strong>NS-ADPMM</strong> (Newton–Schulz projection) against five
+state-of-the-art manifold baselines: ManPG, ManPG-Ada, RADMM, ARADMM,
+and OADMM. Datasets span text (News20, RCV1), images (MNIST, USPS),
+citation/collaboration/social graphs (Cora, ca-GrQc, Facebook), and
+synthetic problems with planted structure. All methods share the same
+fixed random initialization; we set <span
+class="math inline">\(\rho=\lambda_{\max}(\am^\top\am)\)</span> for SPCA
+and <span
+class="math inline">\(\rho=\tfrac{1}{2}\lambda_{\max}(\lm)\)</span> for
+SSC. Both formulations are minimizations, so <strong>lower curves are
+better</strong>.</p>
+<p>On News20, OADMM matches our methods per <em>iteration</em>, but it
+pays for each iteration with a backtracking line search on the manifold,
+requiring repeated retractions and augmented-Lagrangian evaluations. The
+wall-clock plots tell the real story: NS-ADPMM and SVD-ADPMM converge
+significantly faster in time than every baseline.</p>
+<figure style="text-align:center;">
+<img 
+    src="spca_news20_time.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Sparse PCA on News20: objective versus wall-clock time"
+  />
+<figcaption>
+<em> <strong>Figure 2:</strong> Sparse PCA on News20 (n=15,935, p=k=50):
+objective versus wall-clock time. </em>
+</figcaption>
+</figure>
+<figure style="text-align:center;">
+<img 
+    src="spca_rcv1_time.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Sparse PCA on RCV1: objective versus wall-clock time"
+  />
+<figcaption>
+<em> <strong>Figure 3:</strong> Sparse PCA on RCV1 (n=47,236, p=k=50),
+stressing scalability in the feature dimension. </em>
+</figcaption>
+</figure>
+<p>For Sparse Spectral Clustering we build Gaussian similarity graphs
+with bandwidth set to the median squared pairwise distance. On both
+MNIST and USPS, ADPMM with either projection variant converges to a
+lower objective in fewer iterations <em>and</em> less time than the
+baselines, with NS-ADPMM the most efficient.</p>
+<figure style="text-align:center;">
+<img 
+    src="ssc_mnist_time.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Sparse spectral clustering on MNIST: objective versus wall-clock time"
+  />
+<figcaption>
+<em> <strong>Figure 4:</strong> Sparse spectral clustering on MNIST
+(60,000 samples, 10 clusters): objective versus time. </em>
+</figcaption>
+</figure>
+<figure style="text-align:center;">
+<img 
+    src="ssc_usps_time.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Sparse spectral clustering on USPS: objective versus wall-clock time"
+  />
+<figcaption>
+<em> <strong>Figure 5:</strong> Sparse spectral clustering on USPS
+(7,291 samples, 10 clusters): objective versus time. </em>
+</figcaption>
+</figure>
+<p>The same advantage carries over to real network graphs (ca-GrQc,
+Cora, Facebook), where the proposed methods reach competitive objective
+values while enforcing the orthogonality constraint <em>exactly</em>,
+and do so faster than the manifold baselines.</p>
+<figure style="text-align:center;">
+<img 
+    src="Obj_vs_Time_facebook_k50_lam1.00_rho1.0.png" 
+    style="width:100%; height:350px; max-width:600px;" 
+    alt="Objective versus time on the Facebook graph"
+  />
+<figcaption>
+<em> <strong>Figure 6:</strong> SSC on the Facebook ego-network graph
+(4,039 nodes, 88,234 edges, k=50): objective versus time. </em>
+</figcaption>
+</figure>
+<p>Finally, sweeping the problem size, sparsity weight <span
+class="math inline">\(\lambda\)</span>, and penalty <span
+class="math inline">\(\rho\)</span> on synthetic instances shows the
+methods maintain stable convergence and their efficiency advantage
+across all settings, indicating that ADPMM scales to large,
+high-dimensional problems.</p>
+<figure style="text-align:center;">
+<img src="Obj_vs_Time_n100_k50_d0.200_lam0.01_rho1.0.png" style="width:32%; max-width:260px;" alt="n=100, k=50, lambda=0.01" />
+<img src="Obj_vs_Time_n100_k50_d0.200_lam1.00_rho10.0.png" style="width:32%; max-width:260px;" alt="n=100, k=50, lambda=1.00" />
+<img src="Obj_vs_Time_n1000_k100_d0.010_lam0.50_rho5.0.png" style="width:32%; max-width:260px;" alt="n=1000, k=100, lambda=0.50" />
+<img src="Obj_vs_Time_n500_k50_d0.100_lam0.05_rho5.0.png" style="width:32%; max-width:260px;" alt="n=500, k=50, lambda=0.05" />
+<img src="Obj_vs_Time_n1000_k50_d0.010_lam0.10_rho1.0.png" style="width:32%; max-width:260px;" alt="n=1000, k=50, lambda=0.10" />
+<img src="Obj_vs_Time_n2000_k100_d0.005_lam0.10_rho2.0.png" style="width:32%; max-width:260px;" alt="n=2000, k=100, lambda=0.10" />
+<img src="Obj_vs_Time_n5000_k100_d0.001_lam0.10_rho5.0.png" style="width:32%; max-width:260px;" alt="n=5000, k=100, lambda=0.10" />
+<img src="Obj_vs_Time_n500_k100_d0.050_lam0.50_rho1.0.png" style="width:32%; max-width:260px;" alt="n=500, k=100, lambda=0.50" />
+<img src="Obj_vs_Time_n500_k100_d0.050_lam0.70_rho2.0.png" style="width:32%; max-width:260px;" alt="n=500, k=100, lambda=0.70" />
+<figcaption>
+<em> <strong>Figure 7:</strong> Objective versus time across problem
+scales (<span class="math inline">\(n\)</span> from 100 to 5{,}000) and
+parameter settings. </em>
+</figcaption>
+</figure>
+<h2 id="references">References</h2>
+<p>[1] Amir Beck. “First-order methods in optimization.” SIAM, 2017.</p>
+<p>[2] Stephen Boyd et al. “Distributed optimization and statistical
+learning via the alternating direction method of multipliers.”
+Foundations and Trends in Machine Learning, 2011.</p>
+<p>[3] Shixiang Chen et al. “Proximal gradient method for nonsmooth
+optimization over the Stiefel manifold.” SIAM Journal on Optimization,
+2020.</p>
+<p>[4] Nicholas J. Higham. “Functions of matrices: theory and
+computation.” SIAM, 2008.</p>
+<p>[5] Keller Jordan et al. “Muon: An optimizer for hidden layers in
+neural networks.” 2024.</p>
+</body>
+</html>
